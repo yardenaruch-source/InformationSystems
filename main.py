@@ -6,5 +6,7 @@ app = Flask(__name__)
 def base():
     return render_template("base.html")
 
+
+
 if __name__ == "__main__":
     app.run(debug=True)
