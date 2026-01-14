@@ -1,10 +1,25 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}התחברות - FLYTAU{% endblock %}
+
+{% block content %}
+<section class="card narrow">
+  <h1>התחברות</h1>
+  <p class="muted">הכניס/י אימייל וסיסמה.</p>
+
+  <form method="post" class="form">
+    <label for="email">אימייל</label>
+    <input id="email" type="email" name="email" placeholder="name@example.com" required>
+
+    <label for="password">סיסמה</label>
+    <input id="password" type="password" name="password" maxlength="8" placeholder="עד 8 תווים" required>
+
+    <button class="btn" type="submit">התחברות</button>
+  </form>
+
+  <p class="muted" style="margin-top: 14px;">
+    אין לך חשבון?
+    <a href="{{ url_for('register') }}">להרשמה</a>
+  </p>
+</section>
+{% endblock %}

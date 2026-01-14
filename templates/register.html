@@ -1,10 +1,37 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}הרשמה - FLYTAU{% endblock %}
+
+{% block content %}
+<section class="card narrow">
+  <h1>הרשמה</h1>
+  <p class="muted">יצירת משתמש חדש במערכת.</p>
+
+  <form method="post" class="form">
+    <label for="first_name">שם פרטי</label>
+    <input id="first_name" type="text" name="first_name" required>
+
+    <label for="last_name">שם משפחה</label>
+    <input id="last_name" type="text" name="last_name" required>
+
+    <label for="email">אימייל</label>
+    <input id="email" type="email" name="email" placeholder="name@example.com" required>
+
+    <label for="password">סיסמה (עד 8 תווים)</label>
+    <input id="password" type="password" name="password" maxlength="8" required>
+
+    <label for="passport_id">מספר דרכון (9 ספרות)</label>
+    <input id="passport_id" type="text" name="passport_id" maxlength="9" required>
+
+    <label for="birth_date">תאריך לידה</label>
+    <input id="birth_date" type="date" name="birth_date" required>
+
+    <button class="btn" type="submit">יצירת חשבון</button>
+  </form>
+
+  <p class="muted" style="margin-top: 14px;">
+    כבר יש לך חשבון?
+    <a href="{{ url_for('login') }}">להתחברות</a>
+  </p>
+</section>
+{% endblock %}

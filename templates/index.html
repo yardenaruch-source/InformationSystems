@@ -1,10 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
 
-</body>
-</html>
+{% block title %}דף הבית - FLYTAU{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h1>ברוכים הבאים ל-FLYTAU ✈️</h1>
+
+  {% if user %}
+    <p>
+      היי <b>{{ user.customer_first_name }}</b> 👋<br>
+      את/ה מחובר/ת בתור: <span class="muted">{{ user.customer_email }}</span>
+    </p>
+
+    <p class="muted">
+      מכאן אפשר להמשיך למסכים של חיפוש טיסות / הזמנות / מסלולים (נוסיף בהמשך).
+    </p>
+
+    <div class="row">
+      <a class="btn btn-outline" href="{{ url_for('logout') }}">התנתקות</a>
+    </div>
+  {% else %}
+    <p class="muted">
+      כדי להשתמש במערכת, התחבר/י או צרי חשבון חדש.
+    </p>
+
+    <div class="row">
+      <a class="btn" href="{{ url_for('login') }}">התחברות</a>
+      <a class="btn btn-outline" href="{{ url_for('register') }}">הרשמה</a>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}
