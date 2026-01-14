@@ -137,6 +137,10 @@ def register():
 def ping():
     return {"ok": True, "ts": datetime.utcnow().isoformat()}
 
+@app.route("/whoami")
+def whoami():
+    return "Loaded main.py OK"
+
 if __name__ == "__main__":
     app.run(debug=True)
 
