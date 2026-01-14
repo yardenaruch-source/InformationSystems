@@ -1,5 +1,6 @@
-import mysql.connector as mdb
+from contextlib import contextmanager
 
-con = mdb.connect(
-    host=
-)
+@contextmanager
+def db_cursor():
+    raise RuntimeError("DB credentials are configured on PythonAnywhere only.")
+    yield
