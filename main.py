@@ -145,10 +145,42 @@ def register():
 
     return render_template("register.html", today=today)
 
-@app.route("/book")
+@app.route("/book", methods=["GET"])
 def book():
-    user = current_user()
-    return render_template("book.html", user=user)
+    origin = request.args.get("origin", "").strip().upper()
+    destination = request.args.get("destination", "").strip().upper()
+    date = request.args.get("date", "").strip()
+
+    flights = []
+    if origin and destination and date:
+        with db_cursor() as cur:
+            cur.execute("""
+                SELECT
+                  f.flight_id,
+                  f.takeoff_date,
+                  f.takeoff_time,
+                  r.origin_airport,
+                  r.destination_airport,
+                  MIN(cc.price) AS from_price
+                FROM Flight f
+                JOIN FlightRoute r ON r.route_id = f.route_id
+                JOIN CabinClass cc ON cc.flight_id = f.flight_id
+                WHERE f.flight_status = 'OPEN'
+                  AND f.takeoff_date = %s
+                  AND r.origin_airport = %s
+                  AND r.destination_airport = %s
+                GROUP BY f.flight_id, f.takeoff_date, f.takeoff_time, r.origin_airport, r.destination_airport
+                ORDER BY f.takeoff_time
+            """, (date, origin, destination))
+            flights = cur.fetchall()
+
+    return render_template(
+        "book.html",
+        origin=origin,
+        destination=destination,
+        date=date,
+        flights=flights
+    )
 
 @app.route("/ping")
 def ping():
