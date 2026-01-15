@@ -13,7 +13,7 @@ body{
   font-family:system-ui, Arial, sans-serif;
   color:var(--text);
 
-  background-image: url("/static/img/FLYTAU_background.jpeg");
+  background-image: url("/static/img/FLYTAU_background2.jpeg");
   background-size: cover;          /* fills screen */
   background-position: center;     /* centers image */
   background-repeat: no-repeat;    /* no tiling */
