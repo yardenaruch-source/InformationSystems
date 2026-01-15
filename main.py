@@ -145,6 +145,11 @@ def register():
 
     return render_template("register.html", today=today)
 
+@app.route("/book")
+def book():
+    user = current_user()
+    return render_template("book.html", user=user)
+
 @app.route("/ping")
 def ping():
     return {"ok": True, "ts": datetime.utcnow().isoformat()}
