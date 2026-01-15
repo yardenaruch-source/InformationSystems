@@ -9,6 +9,7 @@
 
 *{box-sizing:border-box}
 body{
+  background-image: url("/static/img/FLYTAU_background.jpeg");
   margin:0;
   font-family:system-ui, Arial, sans-serif;
   background:var(--bg);
