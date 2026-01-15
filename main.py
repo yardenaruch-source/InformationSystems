@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from utils import db_cursor
-from datetime import datetime
+from datetime import datetime, date
 
 app = Flask(__name__)
 app.secret_key = 'the_winning_triplet'
@@ -72,6 +72,8 @@ def register():
     if session.get("user_email"):
         return redirect(url_for("home"))
 
+    today = date.today().isoformat()
+
     if request.method == "POST":
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
@@ -82,11 +84,21 @@ def register():
 
         if not all([first_name, last_name, email, password, passport_id, birth_date]):
             flash("Please fill in all fields.", "error")
-            return render_template("register.html")
+            return render_template("register.html", today=today)
 
         if len(password) > 8:
             flash("Password must be at most 8 characters.", "error")
-            return render_template("register.html")
+            return render_template("register.html", today=today)
+
+        try:
+            bd = datetime.strptime(birth_date, "%Y-%m-%d").date()
+        except ValueError:
+            flash("Invalid birth date.", "error")
+            return render_template("register.html", today=today)
+
+        if bd < date(1900, 1, 1) or bd > date.today():
+            flash("Birth date must be between 1900-01-01 and today.", "error")
+            return render_template("register.html", today=today)
 
         try:
             with db_cursor() as cur:
@@ -100,7 +112,7 @@ def register():
                 )
                 if cur.fetchone():
                     flash("That email is already registered.", "error")
-                    return render_template("register.html")
+                    return render_template("register.html", today=today)
 
                 cur.execute(
                     """
@@ -112,7 +124,7 @@ def register():
                 )
                 if cur.fetchone():
                     flash("That passport ID is already in use.", "error")
-                    return render_template("register.html")
+                    return render_template("register.html", today=today)
 
                 cur.execute(
                     """
@@ -129,9 +141,9 @@ def register():
         except Exception as e:
             # Don’t expose sensitive DB details in production; for now it helps debugging
             flash(f"Registration failed: {e}", "error")  #change to: Regiistration faild. Please try again.
-            return render_template("register.html")
+            return render_template("register.html", today=today)
 
-    return render_template("register.html")
+    return render_template("register.html", today=today)
 
 @app.route("/ping")
 def ping():
