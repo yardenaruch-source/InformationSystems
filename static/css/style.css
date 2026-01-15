@@ -9,7 +9,7 @@
 
 *{box-sizing:border-box}
 body{
-  background-image: url("/static/img/FLYTAU_background.jpeg");
+  background-image: url("/static/img/FLYTAU_background1.jpeg");
   font-family:system-ui, Arial, sans-serif;
   color:var(--text);
 
