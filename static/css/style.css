@@ -10,9 +10,16 @@
 *{box-sizing:border-box}
 body{
   background-image: url("/static/img/FLYTAU_background.jpeg");
-  margin:0;
   font-family:system-ui, Arial, sans-serif;
   color:var(--text);
+
+  background-image: url("/static/img/FLYTAU_background.jpeg");
+  background-size: cover;          /* fills screen */
+  background-position: center;     /* centers image */
+  background-repeat: no-repeat;    /* no tiling */
+  background-attachment: fixed;    /* optional, nice effect */
+
+  min-height: 100vh;               /* 🔑 ensures full screen height */
 }
 
 .container{width:min(1050px,92vw);margin:0 auto;padding:22px 0}
