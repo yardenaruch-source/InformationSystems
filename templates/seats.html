@@ -1,10 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Select Seats{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<section class="card">
+  <h2>Select seats - {{ class_type }} (Flight {{ flight_id }})</h2>
+  <p class="muted">Price per seat: ₪{{ cabin.price }}</p>
+
+  <form method="post">
+    <input type="hidden" name="class_type" value="{{ class_type }}"/>
+
+    <div class="seats-wrap">
+      <table class="board-table">
+        <tbody>
+          {% for r in range(1, cabin.rows_num + 1) %}
+          <tr>
+            {% for c in range(1, cabin.columns_num + 1) %}
+              {% set is_taken = taken.get((r,c), False) %}
+              <td style="text-align:center;">
+                {% if is_taken %}
+                  <span class="seat-taken">X</span>
+                {% else %}
+                    <label class="seat-tile">
+                      <input type="checkbox" name="seat" value="{{ r }}-{{ c }}">
+                      <span>{{ r }}{{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[c-1] if c <= 26 else c }}</span>
+                    </label>
+                {% endif %}
+              </td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="row" style="margin-top:16px; gap:10px;">
+      <a class="btn btn-outline" href="{{ url_for('flight_details', flight_id=flight_id) }}">Back</a>
+      <button class="btn" type="submit">Continue to checkout</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

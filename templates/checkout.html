@@ -1,10 +1,24 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Checkout{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<section class="card">
+  <h2>Checkout</h2>
+
+  <p>
+    <b>Order:</b> {{ order.order_id }}<br>
+    <b>Flight:</b> {{ order.origin_airport }} → {{ order.destination_airport }}<br>
+    <b>Date:</b> {{ order.takeoff_date }} {{ order.takeoff_time }}<br>
+    <b>Status:</b> {{ order.order_status }}
+  </p>
+
+  <h3>Seats</h3>
+  <ul>
+    {% for s in seats %}
+      <li>{{ s.class_type }} — Row {{ s.s_row }}, Col {{ s.s_column }}</li>
+    {% endfor %}
+  </ul>
+
+  <h3>Total: ₪{{ total }}</h3>
+</section>
+{% endblock %}

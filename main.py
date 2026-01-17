@@ -185,20 +185,157 @@ def book():
 @app.route("/flight/<flight_id>")
 def flight_details(flight_id):
     with db_cursor() as cur:
+        # flight + route info
         cur.execute("""
             SELECT f.flight_id, f.takeoff_date, f.takeoff_time,
-                   r.origin_airport, r.destination_airport
+                   r.origin_airport, r.destination_airport, f.plane_id
             FROM Flight f
             JOIN Flight_route r ON r.route_id = f.route_id
             WHERE f.flight_id = %s
         """, (flight_id,))
         flight = cur.fetchone()
+        if not flight:
+            flash("Flight not found.", "error")
+            return redirect(url_for("book"))
 
-    if not flight:
-        flash("Flight not found.", "error")
-        return redirect(url_for("book"))
+        # cabin classes (price + dimensions)
+        cur.execute("""
+            SELECT class_type, price, rows_num, columns_num
+            FROM Cabin_class
+            WHERE flight_id = %s
+            ORDER BY class_type
+        """, (flight_id,))
+        cabins = cur.fetchall()
 
-    return render_template("flight_details.html", flight=flight)
+        # availability per class (count seats where order_id is NULL)
+        cur.execute("""
+            SELECT class_type, COUNT(*) AS available
+            FROM Seat
+            WHERE flight_id = %s AND order_id IS NULL
+            GROUP BY class_type
+        """, (flight_id,))
+        avail_map = {row["class_type"]: row["available"] for row in cur.fetchall()}
+
+    # attach availability into cabins
+    for c in cabins:
+        c["available"] = avail_map.get(c["class_type"], 0)
+
+    return render_template("flight_details.html", flight=flight, cabins=cabins)
+
+def generate_order_id(cur):
+    # simple 5-char numeric ID; you can improve later
+    cur.execute("SELECT LPAD(FLOOR(RAND()*99999), 5, '0') AS oid")
+    return cur.fetchone()["oid"]
+
+@app.route("/seats/<flight_id>", methods=["GET", "POST"])
+def seats(flight_id):
+    class_type = request.args.get("class_type") or request.form.get("class_type")
+    if class_type not in ("Economy", "Business"):
+        flash("Invalid class type.", "error")
+        return redirect(url_for("flight_details", flight_id=flight_id))
+
+    with db_cursor() as cur:
+        # get cabin dimensions + price
+        cur.execute("""
+            SELECT rows_num, columns_num, price
+            FROM Cabin_class
+            WHERE flight_id = %s AND class_type = %s
+        """, (flight_id, class_type))
+        cabin = cur.fetchone()
+        if not cabin:
+            flash("Cabin not found for this flight.", "error")
+            return redirect(url_for("flight_details", flight_id=flight_id))
+
+        if request.method == "POST":
+            selected = request.form.getlist("seat")  # values like "3-2"
+            if not selected:
+                flash("Please select at least one seat.", "error")
+            else:
+                # create order
+                oid = generate_order_id(cur)
+                user_email = session.get("user_email")
+
+                cur.execute("""
+                    INSERT INTO Orders (order_id, flight_id, guest_email, reg_customer_email, date_of_purchase, order_status)
+                    VALUES (%s, %s, %s, %s, NOW(), 'Active')
+                """, (oid, flight_id, None, user_email))
+
+                # try to reserve seats (only if still free)
+                ok = True
+                for s in selected:
+                    r, c = s.split("-")
+                    cur.execute("""
+                        UPDATE Seat
+                        SET order_id = %s
+                        WHERE flight_id = %s AND class_type = %s
+                          AND s_row = %s AND s_column = %s
+                          AND order_id IS NULL
+                    """, (oid, flight_id, class_type, r, c))
+                    if cur.rowcount != 1:
+                        ok = False
+                        break
+
+                if not ok:
+                    # rollback logic is limited with autocommit=True; simplest: cancel the order + release any reserved seats
+                    cur.execute("UPDATE Seat SET order_id = NULL WHERE order_id = %s", (oid,))
+                    cur.execute("UPDATE Orders SET order_status = 'Cancelled by system' WHERE order_id = %s", (oid,))
+                    flash("One of the seats was just taken. Please try again.", "error")
+                else:
+                    return redirect(url_for("checkout", order_id=oid))
+
+        # Build seat map for GET (and for re-render after POST errors)
+        cur.execute("""
+            SELECT s_row, s_column, order_id
+            FROM Seat
+            WHERE flight_id = %s AND class_type = %s
+        """, (flight_id, class_type))
+        seats_rows = cur.fetchall()
+
+    # Create a fast lookup: (row,col) -> is_taken
+    taken = {(s["s_row"], s["s_column"]): (s["order_id"] is not None) for s in seats_rows}
+
+    return render_template(
+        "seats.html",
+        flight_id=flight_id,
+        class_type=class_type,
+        cabin=cabin,
+        taken=taken
+    )
+
+@app.route("/checkout/<order_id>")
+def checkout(order_id):
+    with db_cursor() as cur:
+        cur.execute("""
+            SELECT o.order_id, o.flight_id, o.date_of_purchase, o.order_status,
+                   f.takeoff_date, f.takeoff_time, r.origin_airport, r.destination_airport
+            FROM Orders o
+            JOIN Flight f ON f.flight_id = o.flight_id
+            JOIN Flight_route r ON r.route_id = f.route_id
+            WHERE o.order_id = %s
+        """, (order_id,))
+        order = cur.fetchone()
+        if not order:
+            flash("Order not found.", "error")
+            return redirect(url_for("home"))
+
+        cur.execute("""
+            SELECT class_type, s_row, s_column
+            FROM Seat
+            WHERE order_id = %s
+            ORDER BY class_type, s_row, s_column
+        """, (order_id,))
+        seats = cur.fetchall()
+
+        cur.execute("""
+            SELECT SUM(cc.price) AS total
+            FROM Seat s
+            JOIN Cabin_class cc
+              ON cc.flight_id = s.flight_id AND cc.class_type = s.class_type
+            WHERE s.order_id = %s
+        """, (order_id,))
+        total = (cur.fetchone() or {}).get("total") or 0
+
+    return render_template("checkout.html", order=order, seats=seats, total=total)
 
 @app.route("/ping")
 def ping():
