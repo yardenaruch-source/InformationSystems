@@ -1,10 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Flight {{ flight.flight_id }}{% endblock %}
 
-</body>
-</html>
+{% block content %}
+<section class="card">
+  <h2>Flight {{ flight.flight_id }}</h2>
+  <p class="muted">
+    {{ flight.origin_airport }} → {{ flight.destination_airport }} |
+    {{ flight.takeoff_date }} at {{ flight.takeoff_time }}
+  </p>
+
+  <p>Next: here we’ll show cabin class options and then go to seats.</p>
+
+  <a class="btn btn-outline" href="{{ url_for('book') }}">Back to search</a>
+</section>
+{% endblock %}

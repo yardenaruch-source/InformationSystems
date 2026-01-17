@@ -163,9 +163,9 @@ def book():
                   r.destination_airport,
                   MIN(cc.price) AS from_price
                 FROM Flight f
-                JOIN FlightRoute r ON r.route_id = f.route_id
-                JOIN CabinClass cc ON cc.flight_id = f.flight_id
-                WHERE f.flight_status = 'OPEN'
+                JOIN Flight_Route r ON r.route_id = f.route_id
+                JOIN Cabin_Class cc ON cc.flight_id = f.flight_id
+                WHERE f.flight_status = 'Scheduled'
                   AND f.takeoff_date = %s
                   AND r.origin_airport = %s
                   AND r.destination_airport = %s
@@ -181,6 +181,24 @@ def book():
         date=date,
         flights=flights
     )
+
+@app.route("/flight/<flight_id>")
+def flight_details(flight_id):
+    with db_cursor() as cur:
+        cur.execute("""
+            SELECT f.flight_id, f.takeoff_date, f.takeoff_time,
+                   r.origin_airport, r.destination_airport
+            FROM Flight f
+            JOIN Flight_route r ON r.route_id = f.route_id
+            WHERE f.flight_id = %s
+        """, (flight_id,))
+        flight = cur.fetchone()
+
+    if not flight:
+        flash("Flight not found.", "error")
+        return redirect(url_for("book"))
+
+    return render_template("flight_details.html", flight=flight)
 
 @app.route("/ping")
 def ping():
