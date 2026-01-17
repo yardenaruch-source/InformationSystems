@@ -1,5 +1,5 @@
 CREATE DATABASE FlyTau;
-USE FlyTau;
+USE yardenaruch$FLYTAUdb;
 
 CREATE TABLE Plane (
   plane_id VARCHAR(5) PRIMARY KEY,
