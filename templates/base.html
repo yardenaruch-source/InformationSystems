@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 
-<body>
+<body class="{% block body_class %}{% endblock %}">
     <header class="top_bar">
         <div class="container top_bar_inner">
             <a class="brand" href="{{ url_for('home') }}">FLYTAU</a>

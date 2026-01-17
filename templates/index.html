@@ -1,40 +1,26 @@
 {% extends "base.html" %}
 
 {% block title %}Homepage - FLYTAU{% endblock %}
+{% block body_class %}home-bg{% endblock %}
 
 {% block content %}
+<section class="home-hero">
 
-<div class="hero-text">
-  <h1 class="main-title">FLYTAU</h1>
+  <img class="hero-plane" src="{{ url_for('static', filename='img/plane.png') }}" alt="Plane">
 
-  <div class="subtitle-pill">
-    <span>Where Your Journey Takes Off</span>
+  <div class="hero-text">
+    <h1 class="main-title">FLYTAU</h1>
+
+    <div class="subtitle-pill">
+      <span>Where Your Journey Takes Off</span>
+    </div>
+
+    <div class="hero-features">
+      <p>Smart flight search by route and date</p>
+      <p>Seat selection by class and availability</p>
+      <p>Easy booking management and cancellation</p>
+    </div>
   </div>
-</div>
 
-<section class="card">
-  {% if user %}
-    <p>
-      Hello <b>{{ user.customer_first_name }}</b> 👋<br>
-      You are connected as <span class="muted">{{ user.customer_email }}</span>
-    </p>
-
-    <p class="muted">
-      מכאן אפשר להמשיך למסכים של חיפוש טיסות / הזמנות / מסלולים (נוסיף בהמשך).
-    </p>
-
-    <div class="row">
-      <a class="btn btn-outline" href="{{ url_for('logout') }}">Logout</a>
-    </div>
-  {% else %}
-    <h2>Welcome ✈️</h2>
-    <p class="muted">Please log in or register to continue.</p>
-
-    <div class="row">
-      <a class="btn" href="{{ url_for('login') }}">Login</a>
-      <a class="btn btn-outline" href="{{ url_for('register') }}">Register</a>
-    </div>
-  {% endif %}
 </section>
-
 {% endblock %}
