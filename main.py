@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from utils import db_cursor
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 app = Flask(__name__)
 app.secret_key = 'the_winning_triplet'
@@ -231,9 +231,30 @@ def generate_order_id(cur, max_tries=20):
             return oid
     raise RuntimeError("Could not generate unique order id")
 
+def cleanup_expired_pending_orders():
+    with db_cursor() as cur:
+        cur.execute("""
+            SELECT order_id
+            FROM Orders
+            WHERE order_status = 'Pending'
+              AND date_of_purchase < (NOW() - INTERVAL 15 MINUTE)
+        """)
+        old_orders = [r["order_id"] for r in cur.fetchall()]
+
+        for oid in old_orders:
+            cur.execute("UPDATE Seat SET order_id = NULL WHERE order_id = %s", (oid,))
+            cur.execute("""
+                UPDATE Orders
+                SET order_status = 'Cancelled by system'
+                WHERE order_id = %s
+            """, (oid,))
+
 @app.route("/seats/<flight_id>", methods=["GET", "POST"])
 def seats(flight_id):
     class_type = request.args.get("class_type") or request.form.get("class_type")
+
+    cleanup_expired_pending_orders()
+
     if class_type not in ("Economy", "Business"):
         flash("Invalid class type.", "error")
         return redirect(url_for("flight_details", flight_id=flight_id))
@@ -263,7 +284,7 @@ def seats(flight_id):
                     # Registered user order
                     cur.execute("""
                         INSERT INTO Orders (order_id, flight_id, guest_email, reg_customer_email, date_of_purchase, order_status)
-                        VALUES (%s, %s, %s, %s, NOW(), 'Active')
+                        VALUES (%s, %s, %s, %s, NOW(), 'Pending')
                     """, (oid, flight_id, None, user_email))
                 else:
                     # Guest order (must store guest_email)
@@ -275,7 +296,7 @@ def seats(flight_id):
 
                     cur.execute("""
                         INSERT INTO Orders (order_id, flight_id, guest_email, reg_customer_email, date_of_purchase, order_status)
-                        VALUES (%s, %s, %s, %s, NOW(), 'Active')
+                        VALUES (%s, %s, %s, %s, NOW(), 'Pending')
                     """, (oid, flight_id, guest_email, None))
 
                 # try to reserve seats (only if still free)
@@ -320,8 +341,26 @@ def seats(flight_id):
         taken=taken
     )
 
-@app.route("/checkout/<order_id>")
+@app.route("/checkout/<order_id>", methods=["GET", "POST"])
 def checkout(order_id):
+    cleanup_expired_pending_orders()
+
+    if request.method == "POST":
+        with db_cursor() as cur:
+            cur.execute("""
+                UPDATE Orders
+                SET order_status = 'Active',
+                    date_of_purchase = NOW()
+                WHERE order_id = %s AND order_status = 'Pending'
+            """, (order_id,))
+
+            if cur.rowcount != 1:
+                flash("This reservation expired or was already confirmed. Please book again.", "error")
+                return redirect(url_for("book"))
+
+        flash("Payment confirmed. Order is now active!", "success")
+        return redirect(url_for("checkout", order_id=order_id))
+
     with db_cursor() as cur:
         cur.execute("""
             SELECT o.order_id, o.flight_id, o.date_of_purchase, o.order_status,
@@ -354,6 +393,97 @@ def checkout(order_id):
         total = (cur.fetchone() or {}).get("total") or 0
 
     return render_template("checkout.html", order=order, seats=seats, total=total)
+
+@app.route("/tickets", methods=["GET", "POST"])
+def tickets():
+    cleanup_expired_pending_orders()
+
+    order = None
+    seats = []
+    total = 0
+    can_cancel = False
+
+    if request.method == "POST":
+        order_id = request.form.get("order_id", "").strip()
+        email = request.form.get("email", "").strip().lower()
+
+        with db_cursor() as cur:
+            cur.execute("""
+                SELECT o.order_id, o.flight_id, o.order_status,
+                       f.takeoff_date, f.takeoff_time,
+                       r.origin_airport, r.destination_airport,
+                       o.guest_email, o.reg_customer_email
+                FROM Orders o
+                JOIN Flight f ON f.flight_id = o.flight_id
+                JOIN Flight_route r ON r.route_id = f.route_id
+                WHERE o.order_id = %s
+                  AND (o.guest_email = %s OR o.reg_customer_email = %s)
+            """, (order_id, email, email))
+            order = cur.fetchone()
+
+            if not order:
+                flash("No matching order found for that code + email.", "error")
+                return render_template("tickets.html")
+
+            cur.execute("""
+                SELECT class_type, s_row, s_column
+                FROM Seat
+                WHERE order_id = %s
+                ORDER BY class_type, s_row, s_column
+            """, (order_id,))
+            seats = cur.fetchall()
+
+            cur.execute("""
+                SELECT SUM(cc.price) AS total
+                FROM Seat s
+                JOIN Cabin_class cc
+                  ON cc.flight_id = s.flight_id AND cc.class_type = s.class_type
+                WHERE s.order_id = %s
+            """, (order_id,))
+            total = (cur.fetchone() or {}).get("total") or 0
+
+        # cancel eligibility: > 36 hours before takeoff and status Active
+        try:
+            takeoff_dt = datetime.combine(order["takeoff_date"], order["takeoff_time"])
+            can_cancel = (order["order_status"] == "Active") and (takeoff_dt - datetime.now() > timedelta(hours=36))
+        except Exception:
+            can_cancel = False
+
+    return render_template("tickets.html", order=order, seats=seats, total=total, can_cancel=can_cancel)
+
+@app.route("/cancel/<order_id>")
+def cancel_order(order_id):
+    with db_cursor() as cur:
+        # fetch order + flight time
+        cur.execute("""
+            SELECT o.order_id, o.flight_id, o.order_status,
+                   f.takeoff_date, f.takeoff_time
+            FROM Orders o
+            JOIN Flight f ON f.flight_id = o.flight_id
+            WHERE o.order_id = %s
+        """, (order_id,))
+        order = cur.fetchone()
+
+        if not order:
+            flash("Order not found.", "error")
+            return redirect(url_for("home"))
+
+        if order["order_status"] != "Active":
+            flash("Only active orders can be cancelled.", "error")
+            return redirect(url_for("tickets"))
+
+        takeoff_dt = datetime.combine(order["takeoff_date"], order["takeoff_time"])
+        if takeoff_dt - datetime.now() <= timedelta(hours=36):
+            flash("Too late to cancel (must be more than 36 hours before takeoff).", "error")
+            return redirect(url_for("tickets"))
+
+        # apply cancellation: update status + release seats
+        cur.execute("UPDATE Orders SET order_status = 'Cancelled by customer' WHERE order_id = %s", (order_id,))
+        cur.execute("UPDATE Seat SET order_id = NULL WHERE order_id = %s", (order_id,))
+
+        flash("Order cancelled. A 5% cancellation fee applies.", "success")
+
+    return redirect(url_for("tickets"))
 
 @app.route("/ping")
 def ping():

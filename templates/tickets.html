@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Find My Ticket{% endblock %}
+
+{% block content %}
+<section class="card">
+  <h2>Find My Ticket</h2>
+  <p class="muted">Guests: use your order code + the email you entered.</p>
+
+  <form method="post" class="form" style="margin-top:12px;">
+    <label class="field-label">Order Code</label>
+    <input class="field-input" type="text" name="order_id" required>
+
+    <label class="field-label">Email</label>
+    <input class="field-input" type="email" name="email" required>
+
+    <button class="btn" type="submit">Search</button>
+  </form>
+
+  {% if order %}
+    <hr style="margin:18px 0; opacity:0.4;">
+    <h3>Order {{ order.order_id }}</h3>
+    <p>
+      {{ order.origin_airport }} → {{ order.destination_airport }}<br>
+      {{ order.takeoff_date }} {{ order.takeoff_time }}<br>
+      Status: {{ order.order_status }}
+    </p>
+
+    <h4>Seats</h4>
+    <ul>
+      {% for s in seats %}
+        <li>{{ s.class_type }} — Row {{ s.s_row }}, Col {{ s.s_column }}</li>
+      {% endfor %}
+    </ul>
+
+    <p><b>Total:</b> ₪{{ total }}</p>
+
+    {% if can_cancel %}
+      <a class="btn btn-outline" href="{{ url_for('cancel_order', order_id=order.order_id) }}">Cancel Order</a>
+    {% endif %}
+  {% endif %}
+</section>
+{% endblock %}
