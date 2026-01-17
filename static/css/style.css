@@ -5,9 +5,15 @@
   --muted:#a9b1c7;
   --border:rgba(255,255,255,.12);
   --primary:#5b8cff;
+
+  /* NEW: navbar theme */
+  --nav-bg: rgba(255,255,255,0.92);
+  --nav-text: #0b7e86;       /* teal/blue like your picture */
+  --nav-text-hover: #06686f;
 }
 
 *{box-sizing:border-box}
+
 body{
   font-family: system-ui, Arial, sans-serif;
   color: var(--text);
@@ -15,6 +21,7 @@ body{
   background: #0b1020; /* default for other pages */
 }
 
+/* Homepage background only (keep if you still want it) */
 body.home-bg{
   background-image: url("/static/img/FLYTAU_background2.jpeg");
   background-size: cover;
@@ -25,32 +32,83 @@ body.home-bg{
 
 .container{width:min(1050px,92vw);margin:0 auto;padding:22px 0}
 
+/* =========================
+   TOP BAR (WHITE ON ALL PAGES)
+   ========================= */
+
 .top_bar{
-  position:sticky;top:0;z-index:10;
-  background:rgba(11,16,32,.85);
-  border-bottom:1px solid var(--border);
-  backdrop-filter: blur(8px);
-}
-
-.top_bar_inner{
-  display:flex;align-items:center;justify-content:space-between;
-  gap:16px;padding:14px 0;
-}
-
-body.home-bg .top_bar{
+  position:sticky;
+  top:0;
+  z-index:10;
   background: transparent;
   border-bottom: none;
   backdrop-filter: none;
 }
 
-body.home-bg .top_bar_inner{
-  background: rgba(255,255,255,0.92);
+/* the rounded white pill */
+.top_bar_inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+
+  background: var(--nav-bg);
   border-radius: 999px;
   padding: 14px 22px;
   margin: 18px auto;
   width: min(1200px, 92vw);
   box-shadow: 0 12px 30px rgba(0,0,0,0.10);
 }
+
+/* brand + nav links (BLUE ON ALL PAGES) */
+.brand{
+  text-decoration:none;
+  font-weight:800;
+  letter-spacing:.4px;
+  color: var(--nav-text);
+}
+
+.nav{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+}
+
+.nav a{
+  text-decoration:none;
+  opacity: .95;
+  color: var(--nav-text);
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.nav a:hover{
+  opacity: 1;
+  color: var(--nav-text-hover);
+}
+
+/* If you show a user pill in the nav, make it match the white bar */
+.nav-user{
+  color: rgba(0,0,0,0.65);
+  font-size:.92rem;
+  padding:6px 10px;
+  border:1px solid rgba(0,0,0,0.12);
+  border-radius:999px;
+  background: rgba(255,255,255,0.65);
+}
+
+/* focus outline for accessibility */
+.nav a:focus-visible{
+  outline: 2px solid rgba(11,126,134,0.55);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+/* =========================
+   HOME HERO
+   ========================= */
 
 .home-hero{
   min-height: calc(100vh - 110px);
@@ -81,20 +139,6 @@ body.home-bg .top_bar_inner{
 
 .hero-features p{
   margin: 4px 0;
-}
-
-.brand{text-decoration:none;font-weight:800;letter-spacing:.4px}
-
-.nav{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.nav a{text-decoration:none;opacity:.9}
-.nav a:hover{opacity:1}
-
-.nav-user{
-  color:var(--muted);
-  font-size:.92rem;
-  padding:6px 10px;
-  border:1px solid var(--border);
-  border-radius:999px;
 }
 
 main.container{padding-top:22px;padding-bottom:40px}
@@ -384,19 +428,6 @@ tr:not(:last-child) td {
   font-weight: 700;
 }
 
-/* Make links readable on the dark top bar */
-.brand{
-  color: var(--text);
-}
-.nav a{
-  color: var(--text);
-}
-.nav a:focus-visible{
-  outline: 2px solid rgba(91,140,255,0.8);
-  outline-offset: 3px;
-  border-radius: 10px;
-}
-
 /* Button hover/active/focus states (keeps your colors) */
 .btn:hover,
 .book-btn:hover,
@@ -447,7 +478,6 @@ tr:not(:last-child) td {
 /* Seats grid: make it work with any number of columns.
    Usage:
    - Set CSS variable inline in HTML: style="--cols: 6"
-   - Or set per class in template based on columns_num
 */
 .seats-grid{
   grid-template-columns: repeat(var(--cols, 6), 50px);
@@ -463,12 +493,10 @@ tr:not(:last-child) td {
   border-color: rgba(0,0,0,0.55);
 }
 
-/* Improve checkbox label click area if you're using label+input */
 .seat span{
   display: inline-block;
   width: 100%;
 }
-
 
 /* Make the seat table readable on the white "board" look */
 .board-table td{
@@ -500,25 +528,21 @@ tr:not(:last-child) td {
   pointer-events: none;
 }
 
-/* Hover effect */
 .seat-tile:hover{
   filter: brightness(0.97);
   transform: translateY(-1px);
 }
 
-/* Focus ring when tabbing */
 .seat-tile:has(input[type="checkbox"]:focus-visible){
   outline: 2px solid rgba(91,140,255,0.8);
   outline-offset: 3px;
 }
 
-/* Selected seat */
 .seat-tile:has(input[type="checkbox"]:checked){
-  background: #9ed3d0;       /* matches your buttons */
+  background: #9ed3d0;
   border-color: rgba(0,0,0,0.35);
 }
 
-/* Taken seat cell */
 .seat-taken{
   display: inline-flex;
   align-items: center;
@@ -532,7 +556,6 @@ tr:not(:last-child) td {
   font-weight: 900;
 }
 
-/* Make the table not feel cramped */
 .seats-wrap{
   overflow: auto;
   margin-top: 12px;
@@ -541,7 +564,6 @@ tr:not(:last-child) td {
   background: rgba(255,255,255,0.55);
 }
 
-/* Optional: tighter seats on tiny screens */
 @media (max-width: 520px){
   .seat-tile, .seat-taken{
     min-width: 38px;
@@ -553,36 +575,38 @@ tr:not(:last-child) td {
 
 .hero-text{
   text-align: center;
-  margin-top: 60px; /* רק למיקום בעמוד */
+  margin-top: 60px;
 }
 
-/* FLYTAU */
 .main-title{
   margin: 0 0 18px;
   font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: 3px;
   color: #0b2a3a;
-
-  /* גודל רספונסיבי כמו בתמונה */
   font-size: clamp(64px, 10vw, 120px);
 }
 
-/* הגלולה הלבנה */
 .subtitle-pill{
   display: inline-flex;
   align-items: center;
   justify-content: center;
 
-  background: #ffffff;
   border-radius: 999px;
-
   padding: 14px 32px;
 
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  background: linear-gradient(
+    to right,
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.90) 12%,
+    rgba(255,255,255,0.90) 88%,
+    rgba(255,255,255,0) 100%
+  );
+
+  box-shadow: 0 8px 25px rgba(0,0,0,0.14);
+  backdrop-filter: blur(6px);
 }
 
-/* הטקסט בתוך הגלולה */
 .subtitle-pill span{
   font-size: clamp(20px, 3vw, 40px);
   font-weight: 500;
