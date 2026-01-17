@@ -1,4 +1,3 @@
-CREATE DATABASE FlyTau;
 USE yardenaruch$FLYTAUdb;
 
 CREATE TABLE Plane (

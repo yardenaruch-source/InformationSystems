@@ -3,13 +3,20 @@
 {% block title %}Homepage - FLYTAU{% endblock %}
 
 {% block content %}
-<section class="card">
-  <h1>Welcome to FLYTAU ✈️</h1>
 
+<div class="hero-text">
+  <h1 class="main-title">FLYTAU</h1>
+
+  <div class="subtitle-pill">
+    <span>Where Your Journey Takes Off</span>
+  </div>
+</div>
+
+<section class="card">
   {% if user %}
     <p>
       Hello <b>{{ user.customer_first_name }}</b> 👋<br>
-      You are connected as<span class="muted">{{ user.customer_email }}</span>
+      You are connected as <span class="muted">{{ user.customer_email }}</span>
     </p>
 
     <p class="muted">
@@ -18,6 +25,14 @@
 
     <div class="row">
       <a class="btn btn-outline" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+  {% else %}
+    <h2>Welcome ✈️</h2>
+    <p class="muted">Please log in or register to continue.</p>
+
+    <div class="row">
+      <a class="btn" href="{{ url_for('login') }}">Login</a>
+      <a class="btn btn-outline" href="{{ url_for('register') }}">Register</a>
     </div>
   {% endif %}
 </section>

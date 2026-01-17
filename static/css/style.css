@@ -503,3 +503,42 @@ tr:not(:last-child) td {
     border-radius: 9px;
   }
 }
+
+.hero-text{
+  text-align: center;
+  margin-top: 60px; /* רק למיקום בעמוד */
+}
+
+/* FLYTAU */
+.main-title{
+  margin: 0 0 18px;
+  font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  font-weight: 800;
+  letter-spacing: 3px;
+  color: #0b2a3a;
+
+  /* גודל רספונסיבי כמו בתמונה */
+  font-size: clamp(64px, 10vw, 120px);
+}
+
+/* הגלולה הלבנה */
+.subtitle-pill{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #ffffff;
+  border-radius: 999px;
+
+  padding: 14px 32px;
+
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* הטקסט בתוך הגלולה */
+.subtitle-pill span{
+  font-size: clamp(20px, 3vw, 40px);
+  font-weight: 500;
+  color: #000;
+  line-height: 1.1;
+}
