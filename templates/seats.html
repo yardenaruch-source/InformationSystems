@@ -9,6 +9,13 @@
   <form method="post">
     <input type="hidden" name="class_type" value="{{ class_type }}"/>
 
+    {% if not session.get("user_email") %}
+        <div style="margin-top: 12px;">
+            <label class="field-label">Email (for your order)</label>
+            <input class="field-input" type="email" name="guest_email" required>
+        </div>
+    {% endif %}
+
     <div class="seats-wrap">
       <table class="board-table">
         <tbody>

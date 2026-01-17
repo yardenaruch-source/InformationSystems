@@ -163,8 +163,8 @@ def book():
                   r.destination_airport,
                   MIN(cc.price) AS from_price
                 FROM Flight f
-                JOIN Flight_Route r ON r.route_id = f.route_id
-                JOIN Cabin_Class cc ON cc.flight_id = f.flight_id
+                JOIN Flight_route r ON r.route_id = f.route_id
+                JOIN Cabin_class cc ON cc.flight_id = f.flight_id
                 WHERE f.flight_status = 'Scheduled'
                   AND f.takeoff_date = %s
                   AND r.origin_airport = %s
@@ -222,10 +222,14 @@ def flight_details(flight_id):
 
     return render_template("flight_details.html", flight=flight, cabins=cabins)
 
-def generate_order_id(cur):
-    # simple 5-char numeric ID; you can improve later
-    cur.execute("SELECT LPAD(FLOOR(RAND()*99999), 5, '0') AS oid")
-    return cur.fetchone()["oid"]
+def generate_order_id(cur, max_tries=20):
+    for _ in range(max_tries):
+        cur.execute("SELECT LPAD(FLOOR(RAND()*99999), 5, '0') AS oid")
+        oid = cur.fetchone()["oid"]
+        cur.execute("SELECT 1 FROM Orders WHERE order_id = %s", (oid,))
+        if not cur.fetchone():
+            return oid
+    raise RuntimeError("Could not generate unique order id")
 
 @app.route("/seats/<flight_id>", methods=["GET", "POST"])
 def seats(flight_id):
@@ -255,10 +259,24 @@ def seats(flight_id):
                 oid = generate_order_id(cur)
                 user_email = session.get("user_email")
 
-                cur.execute("""
-                    INSERT INTO Orders (order_id, flight_id, guest_email, reg_customer_email, date_of_purchase, order_status)
-                    VALUES (%s, %s, %s, %s, NOW(), 'Active')
-                """, (oid, flight_id, None, user_email))
+                if user_email:
+                    # Registered user order
+                    cur.execute("""
+                        INSERT INTO Orders (order_id, flight_id, guest_email, reg_customer_email, date_of_purchase, order_status)
+                        VALUES (%s, %s, %s, %s, NOW(), 'Active')
+                    """, (oid, flight_id, None, user_email))
+                else:
+                    # Guest order (must store guest_email)
+                    guest_email = request.form.get("guest_email", "").strip().lower()
+                    if not guest_email:
+                        flash("Guest email is required.", "error")
+                        # Stop here so we don't reserve seats without an order
+                        return redirect(url_for("seats", flight_id=flight_id, class_type=class_type))
+
+                    cur.execute("""
+                        INSERT INTO Orders (order_id, flight_id, guest_email, reg_customer_email, date_of_purchase, order_status)
+                        VALUES (%s, %s, %s, %s, NOW(), 'Active')
+                    """, (oid, flight_id, guest_email, None))
 
                 # try to reserve seats (only if still free)
                 ok = True
