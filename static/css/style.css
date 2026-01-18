@@ -13,7 +13,7 @@
 }
 
 .nav-logo{
-  height: 44px;      /* change size here */
+  height: 40px;      /* change size here */
   width: auto;
   display: block;
     transition: transform 0.15s ease;
@@ -81,8 +81,8 @@ body{
 .top_bar_inner{
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap:16px;
+  justify-content:flex-start;
+  gap:30px;
 
   background: var(--nav-bg);
   border-radius: 999px;
@@ -105,13 +105,14 @@ body{
   align-items:center;
   gap:12px;
   flex-wrap:wrap;
+  margin-left: 10px;
 }
 
 .nav a{
   text-decoration:none;
   opacity: .95;
   color: var(--nav-text);
-  font-weight: 600;
+  font-weight: 450;
   font-size: 20px;
   letter-spacing: 0.3px;
   text-transform: uppercase;
