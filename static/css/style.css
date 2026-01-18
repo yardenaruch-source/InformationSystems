@@ -262,7 +262,7 @@ main.container{
 
 /* Optional narrower board (your login uses board + narrow-board) */
 .narrow-board{
-  width: min(900px, 92vw);
+  width: min(600px, 92vw);
 }
 
 /* Board input styles */
