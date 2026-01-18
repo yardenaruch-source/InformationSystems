@@ -27,7 +27,7 @@ body{
   min-height: 100vh;
 
   /* Background photo on ALL pages */
-  background-image: url("/static/img/FLYTAU_background2.jpeg");
+  background-image: url("/static/img/background.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
