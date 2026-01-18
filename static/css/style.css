@@ -13,7 +13,7 @@
 }
 
 .nav-logo{
-  height: 70px;      /* change size here */
+  height: 44px;      /* change size here */
   width: auto;
   display: block;
     transition: transform 0.15s ease;
