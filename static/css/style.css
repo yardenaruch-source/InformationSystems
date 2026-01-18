@@ -40,7 +40,7 @@
 *{box-sizing:border-box}
 
 .narrow-board{
-  width: min(620px, 92vw);
+  width: min(500px, 92vw);
 }
 
 .board input{
@@ -204,18 +204,17 @@ body{
 }
 
 /* the fading “glass” background */
-.subtitle-pill::before{
+subtitle-pill::before{
   content: "";
   position: absolute;
   inset: 0;
   border-radius: 999px;
 
-  background: radial-gradient(
+  background: linear-gradient(
     to right,
-    rgba(255,255,255,0.9) 0%,
-    rgba(255,255,255,0.45) 50%,
-    rgba(255,255,255,0.70) 78%,
-    rgba(255,255,255,0) 100%
+    rgba(255,255,255,0.95) 0%,
+    rgba(255,255,255,0.95) 35%,
+    rgba(255,255,255,0.00) 100%
   );
 
   filter: blur(2px);
