@@ -265,6 +265,16 @@ main.container{
   width: min(420px, 92vw);
 }
 
+.board h1{
+  text-align: center;
+}
+
+.board .muted,
+.board .muted a{
+  text-align: center;
+  display: block;
+}
+
 .board form{
   display: flex;
   flex-direction: column;
@@ -290,6 +300,7 @@ main.container{
   font-size: 13px;
   color: rgba(0,0,0,0.65);
   margin-bottom: 6px;
+  padding-left: 10px;
 }
 
 /* Search row */
