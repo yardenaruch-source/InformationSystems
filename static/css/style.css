@@ -271,8 +271,6 @@ main.container{
 
 .board .muted,
 .board .muted a{
-  color: var(--muted);
-  margin-top: 22px;
   text-align: center;
   display: block;
 }
