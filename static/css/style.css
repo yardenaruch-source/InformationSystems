@@ -271,6 +271,8 @@ main.container{
 
 .board .muted,
 .board .muted a{
+  color: var(--muted);
+  margin-top: 22px;
   text-align: center;
   display: block;
 }
@@ -278,8 +280,16 @@ main.container{
 .board form{
   display: flex;
   flex-direction: column;
-  gap: 15px;   /* 👈 controls spacing between rows */
+  gap: 8px;   /* 👈 controls spacing between rows */
   padding-left: 10px;
+}
+
+.form label{
+  margin-bottom: -4px;   /* ✅ pulls the input closer */
+}
+
+.form .btn{
+  margin-top: 12px;   /* ✅ pushes the button lower */
 }
 
 /* Board input styles */
