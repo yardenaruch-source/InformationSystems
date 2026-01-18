@@ -16,17 +16,13 @@
   height: 70px;      /* change size here */
   width: auto;
   display: block;
+    transition: transform 0.15s ease;
 }
 
 .brand{
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.nav-logo{
-  height: 44px;
-  transition: transform 0.15s ease;
 }
 
 .brand:hover .nav-logo{
@@ -116,7 +112,7 @@ body{
   opacity: .95;
   color: var(--nav-text);
   font-weight: 600;
-  font-size: 25px;
+  font-size: 20px;
   letter-spacing: 0.3px;
   text-transform: uppercase;
 }
