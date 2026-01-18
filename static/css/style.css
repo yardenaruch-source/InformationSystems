@@ -262,13 +262,13 @@ main.container{
 
 /* Optional narrower board (your login uses board + narrow-board) */
 .narrow-board{
-  width: min(400px, 92vw);
+  width: min(420px, 92vw);
 }
 
 .board form{
   display: flex;
   flex-direction: column;
-  gap: 18px;   /* 👈 controls spacing between rows */
+  gap: 15px;   /* 👈 controls spacing between rows */
   padding-left: 10px;
 }
 
