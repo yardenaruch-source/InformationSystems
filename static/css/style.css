@@ -288,6 +288,7 @@ main.container{
 
 .form .btn{
   margin-top: 12px;   /* ✅ pushes the button lower */
+  font-size: 12px;
 }
 
 /* Board input styles */
