@@ -288,7 +288,6 @@ main.container{
 
 .form .btn{
   margin-top: 12px;   /* ✅ pushes the button lower */
-  font-size: 12px;
 }
 
 /* Board input styles */
@@ -351,6 +350,7 @@ main.container{
   font-weight: 700;
   background: #9ed3d0;
   box-shadow: 0 8px 18px rgba(0,0,0,0.14);
+  font-size: 12px;
 }
 
 /* Table */
