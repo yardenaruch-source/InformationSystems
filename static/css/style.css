@@ -316,6 +316,8 @@ main.container{
 .board-search{
   display: grid;
   grid-template-columns: 1.2fr 1.2fr 1fr auto;
+  grid-auto-flow: column;
+  align-items: end;
   gap: 14px;
   align-items: end;
   padding: 10px 10px 14px;
@@ -486,13 +488,36 @@ main.container{
    RESPONSIVE
    ========================= */
 @media (max-width: 900px){
-  .board-search{ grid-template-columns: 1fr 1fr; }
-  .board-btn{ width: 100%; }
+  /* keep on same line */
+  .board-search{ grid-template-columns: 1.2fr 1.2fr 1fr auto; }
 }
 
 @media (max-width: 520px){
-  .board-search{ grid-template-columns: 1fr; }
-  .board-field input{ height: 44px; }
+  /* still keep it one line */
+  .board-search{ grid-template-columns: 1.2fr 1.2fr 1fr auto; }
+}
+
+@media (max-width: 700px){
+  .board-search{
+    gap: 8px;
+  }
+
+  .board-field input{
+    height: 36px;
+    font-size: 13px;
+    padding: 0 10px;
+  }
+
+  .board-btn{
+    height: 36px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .board-field label{
+    font-size: 11px;
+  }
+}
 
   .seat-tile, .seat-taken{
     min-width: 38px;
