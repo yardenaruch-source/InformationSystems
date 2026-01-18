@@ -29,7 +29,7 @@ body{
   /* Background photo on ALL pages */
   background-image: url("/static/img/background.png");
   background-size: cover;
-  background-position: center 35%;
+  background-position: center 40%;
   background-repeat: no-repeat;
   background-attachment: fixed;
 }
