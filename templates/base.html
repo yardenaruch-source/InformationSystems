@@ -11,18 +11,38 @@
 <body class="{% block body_class %}{% endblock %}">
     <header class="top_bar">
         <div class="container top_bar_inner">
-            <a class="brand" href="{{ url_for('home') }}">FLYTAU</a>
+            <a class="brand" href="{{ url_for('home') }}">
+              <img src="{{ url_for('static', filename='img/logo.png') }}" alt="FLYTAU Logo" class="nav-logo">
+            </a>
             <nav class="nav">
-                <a href="{{ url_for('home') }}"><b>Home</b></a>
-                <a href="{{ url_for('book') }}">Book a flight</a>
-                <a href="{{ url_for('tickets') }}">My Tickets</a>
+                <a href="{{ url_for('home') }}"
+                   class="{% if request.endpoint == 'home' %}active{% endif %}">
+                    Home
+                </a>
+
+                <a href="{{ url_for('book') }}"
+                   class="{% if request.endpoint == 'book' %}active{% endif %}">
+                    Book a flight
+                </a>
+
+                <a href="{{ url_for('tickets') }}"
+                   class="{% if request.endpoint == 'tickets' %}active{% endif %}">
+                    My Tickets
+                </a>
 
                 {% if session.get("user_email") %}
                   <span class="nav-user">Logged in: {{ session.get("user_email") }}</span>
-                  <a class="btn btn-outline" href="{{ url_for('logout') }}">Logout</a>
+
+                  <a class="btn btn-outline {% if request.endpoint == 'logout' %}active{% endif %}"
+                     href="{{ url_for('logout') }}">
+                    Logout
+                  </a>
+
                 {% else %}
-                  <a href="{{ url_for('login') }}">Login</a>
-                  <!--<a class="btn" href="{{ url_for('register') }}">Register</a>-->
+                  <a href="{{ url_for('login') }}"
+                     class="{% if request.endpoint == 'login' %}active{% endif %}">
+                      Login
+                  </a>
                 {% endif %}
             </nav>
         </div>
