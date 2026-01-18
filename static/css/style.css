@@ -35,7 +35,6 @@
 
 .nav a.active{
   font-weight: 900;
-  text-decoration: underline;
 }
 
 *{box-sizing:border-box}
@@ -212,10 +211,10 @@ body{
   border-radius: 999px;
 
   background: radial-gradient(
-    ellipse at center,
-    rgba(255,255,255,0.65) 0%,
-    rgba(255,255,255,0.55) 55%,
-    rgba(255,255,255,0.18) 78%,
+    to right,
+    rgba(255,255,255,0.9) 0%,
+    rgba(255,255,255,0.45) 50%,
+    rgba(255,255,255,0.70) 78%,
     rgba(255,255,255,0) 100%
   );
 
