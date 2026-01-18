@@ -147,7 +147,7 @@ main.container{
 
 .main-title{
   margin: 0 0 18px;
-  font-weight: 600;
+  font-weight: 750;
   letter-spacing: 3px;
   color: #0b2a3a;
   font-size: clamp(64px, 10vw, 120px);
