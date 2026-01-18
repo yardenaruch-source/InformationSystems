@@ -27,7 +27,7 @@ body{
   min-height: 100vh;
 
   /* Background photo on ALL pages */
-  background-image: url("/static/img/background.png");
+  background-image: url("/static/img/background2.png");
   background-size: cover;
   background-position: center 25%;
   background-repeat: no-repeat;
