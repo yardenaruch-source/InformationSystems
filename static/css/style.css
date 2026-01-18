@@ -198,37 +198,37 @@ body{
   border-radius: 999px;
   padding: 18px 40px;
 
-  /* important */
   background: transparent;
   overflow: hidden;
 }
 
-/* the fading “glass” background */
-subtitle-pill::before{
+.subtitle-pill::before{
   content: "";
   position: absolute;
   inset: 0;
   border-radius: 999px;
 
+  /* LEFT solid white -> fades to transparent RIGHT */
   background: linear-gradient(
     to right,
     rgba(255,255,255,0.95) 0%,
-    rgba(255,255,255,0.95) 35%,
+    rgba(255,255,255,0.95) 25%,
+    rgba(255,255,255,0.60) 50%
+    rgba(255,255,255,0.30) 75%
     rgba(255,255,255,0.00) 100%
   );
 
   filter: blur(2px);
+  z-index: 0;               /* behind text */
 }
 
-/* keep text above the fade */
 .subtitle-pill span{
   position: relative;
-  z-index: 1;
+  z-index: 1;               /* above the fade */
   font-size: clamp(20px, 3vw, 40px);
   font-weight: 500;
   color: #000;
 }
-
 /* =========================
    CONTENT
    ========================= */
