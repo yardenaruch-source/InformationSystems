@@ -304,7 +304,7 @@ main.container{
 .board label{
   display: block;
   font-weight: 600;
-  font-size: 13px;
+  font-size: 15px;
   color: rgba(0,0,0,0.65);
   margin-bottom: 2px;
   padding-left: 12px;
@@ -340,17 +340,6 @@ main.container{
 
 .board-field input:focus{
   border-color: rgba(60,160,170,0.8);
-}
-
-.board-btn{
-  height: 40px;
-  padding: 0 16px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  font-weight: 700;
-  background: var(--nav-text);
-  box-shadow: 0 8px 18px rgba(0,0,0,0.14);
 }
 
 /* Table */
