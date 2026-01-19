@@ -95,8 +95,9 @@ main.container{
   display: flex;
   align-items: center;
   gap: 26px;           /* spacing between buttons */
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin-left: 10px;   /* pushes links a bit away from logo */
+  width: 100%;
 }
 
 .nav-right{
