@@ -26,8 +26,13 @@
                 </a>
 
                 <a href="{{ url_for('tickets') }}"
-                   class="{% if request.endpoint == 'tickets' %}active{% endif %}">
+                    class="{% if request.endpoint == 'tickets' %}active{% endif %}">
                     My Tickets
+                </a>
+
+                <a href="{{ url_for('admin') }}"
+                    class="{% if request.endpoint == 'admin' %}active{% endif %}">
+                    Admin
                 </a>
 
                 {% if session.get("user_email") %}

@@ -485,6 +485,10 @@ def cancel_order(order_id):
 
     return redirect(url_for("tickets"))
 
+@app.route("/admin", methods=["GET"])
+def admin():
+    return render_template("admin.html")
+
 @app.route("/ping")
 def ping():
     return {"ok": True, "ts": datetime.utcnow().isoformat()}
