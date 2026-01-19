@@ -489,6 +489,207 @@ def cancel_order(order_id):
 def admin():
     return render_template("admin.html")
 
+@app.route("/admin")
+def admin():
+    flight_id = request.args.get("flight_id", "").strip().upper()
+    status = request.args.get("status", "").strip()
+    takeoff_date = request.args.get("takeoff_date", "").strip()
+
+    where = []
+    params = []
+
+    if flight_id:
+        where.append("f.flight_id = %s")
+        params.append(flight_id)
+    if status:
+        where.append("f.flight_status = %s")
+        params.append(status)
+    if takeoff_date:
+        where.append("f.takeoff_date = %s")
+        params.append(takeoff_date)
+
+    where_sql = ("WHERE " + " AND ".join(where)) if where else ""
+
+    with db_cursor() as cur:
+        cur.execute("SELECT COUNT(*) AS n FROM Plane")
+        planes_count = cur.fetchone()["n"]
+
+        cur.execute("SELECT COUNT(*) AS n FROM Flight_route")
+        routes_count = cur.fetchone()["n"]
+
+        cur.execute("SELECT COUNT(*) AS n FROM Flight")
+        flights_count = cur.fetchone()["n"]
+
+        cur.execute("""
+            SELECT
+              f.flight_id, f.takeoff_date, f.takeoff_time, f.flight_status,
+              r.origin_airport, r.destination_airport,
+              f.plane_id, f.manager_id
+            FROM Flight f
+            JOIN Flight_route r ON r.route_id = f.route_id
+            {where_sql}
+            ORDER BY f.takeoff_date DESC, f.takeoff_time DESC
+            LIMIT 200
+        """.format(where_sql=where_sql), tuple(params))
+        flights = cur.fetchall()
+
+    return render_template(
+        "admin.html",
+        flights=flights,
+        planes_count=planes_count,
+        routes_count=routes_count,
+        flights_count=flights_count,
+        filters={"flight_id": flight_id, "status": status, "takeoff_date": takeoff_date},
+    )
+
+
+@app.route("/admin/planes/new", methods=["GET", "POST"])
+def admin_new_plane():
+    if request.method == "POST":
+        plane_id = request.form.get("plane_id", "").strip().upper()
+        plane_size = request.form.get("plane_size", "").strip()
+        plane_manufacturer = request.form.get("plane_manufacturer", "").strip()
+        purchase_date = request.form.get("purchase_date", "").strip()
+
+        if not all([plane_id, plane_size, plane_manufacturer, purchase_date]):
+            flash("Please fill in all fields.", "error")
+            return render_template("admin_plane_new.html")
+
+        with db_cursor() as cur:
+            cur.execute("""
+                INSERT INTO Plane (plane_id, plane_size, plane_manufacturer, purchase_date)
+                VALUES (%s, %s, %s, %s)
+            """, (plane_id, plane_size, plane_manufacturer, purchase_date))
+
+        flash("Plane added successfully.", "success")
+        return redirect(url_for("admin"))
+
+    return render_template("admin_plane_new.html")
+
+
+@app.route("/admin/routes/new", methods=["GET", "POST"])
+def admin_new_route():
+    if request.method == "POST":
+        route_id = request.form.get("route_id", "").strip()
+        origin = request.form.get("origin_airport", "").strip().upper()
+        dest = request.form.get("destination_airport", "").strip().upper()
+        duration = request.form.get("flight_duration", "").strip()
+
+        if not all([route_id, origin, dest, duration]):
+            flash("Please fill in all fields.", "error")
+            return render_template("admin_route_new.html")
+
+        with db_cursor() as cur:
+            cur.execute("""
+                INSERT INTO Flight_route (route_id, origin_airport, destination_airport, flight_duration)
+                VALUES (%s, %s, %s, %s)
+            """, (route_id, origin, dest, duration))
+
+        flash("Route added successfully.", "success")
+        return redirect(url_for("admin"))
+
+    return render_template("admin_route_new.html")
+
+
+@app.route("/admin/flights/new", methods=["GET", "POST"])
+def admin_new_flight():
+    # GET: show dropdowns for planes/routes/managers
+    with db_cursor() as cur:
+        cur.execute("SELECT plane_id FROM Plane ORDER BY plane_id")
+        planes = [r["plane_id"] for r in cur.fetchall()]
+
+        cur.execute("""
+            SELECT route_id, origin_airport, destination_airport
+            FROM Flight_route
+            ORDER BY route_id
+        """)
+        routes = cur.fetchall()
+
+        cur.execute("""
+            SELECT employee_id, employee_first_name, employee_last_name
+            FROM Manager
+            ORDER BY employee_id
+        """)
+        managers = cur.fetchall()
+
+    if request.method == "POST":
+        flight_id = request.form.get("flight_id", "").strip().upper()
+        route_id = request.form.get("route_id", "").strip()
+        plane_id = request.form.get("plane_id", "").strip().upper()
+        manager_id = request.form.get("manager_id", "").strip()
+        takeoff_date = request.form.get("takeoff_date", "").strip()
+        takeoff_time = request.form.get("takeoff_time", "").strip()
+
+        # optional: auto-create cabin & seats
+        econ_price = request.form.get("econ_price", "").strip()
+        bus_price = request.form.get("bus_price", "").strip()
+        econ_rows = request.form.get("econ_rows", "").strip()
+        econ_cols = request.form.get("econ_cols", "").strip()
+        bus_rows = request.form.get("bus_rows", "").strip()
+        bus_cols = request.form.get("bus_cols", "").strip()
+
+        if not all([flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time]):
+            flash("Please fill in the required flight fields.", "error")
+            return render_template("admin_flight_new.html", planes=planes, routes=routes, managers=managers)
+
+        with db_cursor() as cur:
+            cur.execute("""
+                INSERT INTO Flight (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time, flight_status)
+                VALUES (%s, %s, %s, %s, %s, %s, 'Scheduled')
+            """, (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time))
+
+            # If cabin fields provided, try to create cabin classes + seats
+            auto_ok = all([econ_price, bus_price, econ_rows, econ_cols, bus_rows, bus_cols])
+            if auto_ok:
+                # NOTE: This assumes your Cabin_class is per-flight (recommended).
+                # If your DB is still (plane_id, class_type) PK, this will need adjustment.
+                cur.execute("""
+                    INSERT INTO Cabin_class (flight_id, class_type, plane_id, columns_num, rows_num, price)
+                    VALUES (%s, 'Economy', %s, %s, %s, %s)
+                """, (flight_id, plane_id, int(econ_cols), int(econ_rows), float(econ_price)))
+
+                cur.execute("""
+                    INSERT INTO Cabin_class (flight_id, class_type, plane_id, columns_num, rows_num, price)
+                    VALUES (%s, 'Business', %s, %s, %s, %s)
+                """, (flight_id, plane_id, int(bus_cols), int(bus_rows), float(bus_price)))
+
+                # Seats: Economy
+                for r in range(1, int(econ_rows) + 1):
+                    for c in range(1, int(econ_cols) + 1):
+                        cur.execute("""
+                            INSERT INTO Seat (flight_id, class_type, s_row, s_column, order_id)
+                            VALUES (%s, 'Economy', %s, %s, NULL)
+                        """, (flight_id, r, c))
+
+                # Seats: Business
+                for r in range(1, int(bus_rows) + 1):
+                    for c in range(1, int(bus_cols) + 1):
+                        cur.execute("""
+                            INSERT INTO Seat (flight_id, class_type, s_row, s_column, order_id)
+                            VALUES (%s, 'Business', %s, %s, NULL)
+                        """, (flight_id, r, c))
+
+        flash("Flight created successfully.", "success")
+        return redirect(url_for("admin"))
+
+    return render_template("admin_flight_new.html", planes=planes, routes=routes, managers=managers)
+
+
+@app.route("/admin/flights/cancel/<flight_id>", methods=["POST"])
+def admin_cancel_flight(flight_id):
+    flight_id = flight_id.strip().upper()
+    with db_cursor() as cur:
+        cur.execute("""
+            UPDATE Flight
+            SET flight_status = 'Cancelled'
+            WHERE flight_id = %s
+        """, (flight_id,))
+        if cur.rowcount != 1:
+            flash("Flight not found.", "error")
+        else:
+            flash("Flight cancelled.", "success")
+    return redirect(url_for("admin"))
+
 @app.route("/ping")
 def ping():
     return {"ok": True, "ts": datetime.utcnow().isoformat()}

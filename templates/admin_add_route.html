@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Add Route{% endblock %}
+
+{% block content %}
+<section class="card narrow-board">
+  <h2>Add Route</h2>
+
+  <form method="post" class="form" style="margin-top:12px;">
+    <label class="field-label">Route ID</label>
+    <input class="field-input" name="route_id" placeholder="e.g. 101" required>
+
+    <label class="field-label">Origin Airport (City)</label>
+    <input class="field-input" name="origin_airport" placeholder="e.g. TLV" required>
+
+    <label class="field-label">Destination Airport (City)</label>
+    <input class="field-input" name="destination_airport" placeholder="e.g. LHR" required>
+
+    <label class="field-label">Duration (minutes)</label>
+    <input class="field-input" type="number" min="1" name="flight_duration" placeholder="e.g. 300" required>
+
+    <div style="display:flex; gap:10px; margin-top:12px;">
+      <button class="btn" type="submit">Save</button>
+      <a class="btn btn-outline" href="{{ url_for('admin') }}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

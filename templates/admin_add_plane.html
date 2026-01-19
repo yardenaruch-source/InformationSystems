@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Add Plane{% endblock %}
+
+{% block content %}
+<section class="card narrow-board">
+  <h2>Add Plane</h2>
+
+  <form method="post" class="form" style="margin-top:12px;">
+    <label class="field-label">Plane ID</label>
+    <input class="field-input" name="plane_id" placeholder="e.g. P0001" required>
+
+    <label class="field-label">Size</label>
+    <select class="field-input" name="plane_size" required>
+      <option value="Small">Small</option>
+      <option value="Large">Large</option>
+    </select>
+
+    <label class="field-label">Manufacturer</label>
+    <select class="field-input" name="plane_manufacturer" required>
+      <option value="Boeing">Boeing</option>
+      <option value="Airbus">Airbus</option>
+      <option value="Dassault">Dassault</option>
+    </select>
+
+    <label class="field-label">Purchase Date</label>
+    <input class="field-input" type="date" name="purchase_date" required>
+
+    <div style="display:flex; gap:10px; margin-top:12px;">
+      <button class="btn" type="submit">Save</button>
+      <a class="btn btn-outline" href="{{ url_for('admin') }}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

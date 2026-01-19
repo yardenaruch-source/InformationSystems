@@ -31,7 +31,7 @@
                 </a>
 
                 <a href="{{ url_for('admin') }}"
-                    class="{% if request.endpoint == 'admin' %}active{% endif %}">
+                    class="nav-right {% if request.endpoint == 'admin' %}active{% endif %}">
                     Admin
                 </a>
 

@@ -3,11 +3,99 @@
 
 {% block content %}
 <section class="card">
-  <h2>Admin Panel</h2>
-  <p class="muted">Admin tools will go here.</p>
+  <h2>Admin Dashboard</h2>
 
-  <div style="margin-top:12px;">
-    <a class="btn" href="{{ url_for('home') }}">Back to Home</a>
+  <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px;">
+    <div class="card" style="padding:12px; min-width:160px;">
+      <b>Planes</b><br>
+      <span style="font-size:24px;">{{ planes_count }}</span>
+    </div>
+    <div class="card" style="padding:12px; min-width:160px;">
+      <b>Routes</b><br>
+      <span style="font-size:24px;">{{ routes_count }}</span>
+    </div>
+    <div class="card" style="padding:12px; min-width:160px;">
+      <b>Flights</b><br>
+      <span style="font-size:24px;">{{ flights_count }}</span>
+    </div>
   </div>
+
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+    <a class="btn" href="{{ url_for('admin_new_plane') }}">+ Add Plane</a>
+    <a class="btn" href="{{ url_for('admin_new_route') }}">+ Add Route</a>
+    <a class="btn" href="{{ url_for('admin_new_flight') }}">+ Add Flight</a>
+  </div>
+
+  <hr style="margin:18px 0; opacity:0.35;">
+
+  <h3>Flights</h3>
+
+  <form method="get" style="display:flex; gap:10px; flex-wrap:wrap; align-items:end; margin:10px 0 14px;">
+    <div>
+      <label class="field-label">Flight ID</label>
+      <input class="field-input" name="flight_id" value="{{ filters.flight_id }}" placeholder="e.g. F1234">
+    </div>
+    <div>
+      <label class="field-label">Status</label>
+      <select class="field-input" name="status">
+        <option value="" {% if not filters.status %}selected{% endif %}>All</option>
+        <option value="Scheduled" {% if filters.status=='Scheduled' %}selected{% endif %}>Scheduled</option>
+        <option value="Full" {% if filters.status=='Full' %}selected{% endif %}>Full</option>
+        <option value="Completed" {% if filters.status=='Completed' %}selected{% endif %}>Completed</option>
+        <option value="Cancelled" {% if filters.status=='Cancelled' %}selected{% endif %}>Cancelled</option>
+      </select>
+    </div>
+    <div>
+      <label class="field-label">Takeoff Date</label>
+      <input class="field-input" type="date" name="takeoff_date" value="{{ filters.takeoff_date }}">
+    </div>
+    <button class="btn" type="submit">Filter</button>
+    <a class="btn btn-outline" href="{{ url_for('admin') }}">Reset</a>
+  </form>
+
+  <div class="board-table-wrap">
+    <table class="board-table">
+      <thead>
+        <tr>
+          <th>Flight</th>
+          <th>Route</th>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Status</th>
+          <th>Plane</th>
+          <th>Manager</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% if flights and flights|length > 0 %}
+        {% for f in flights %}
+        <tr>
+          <td>{{ f.flight_id }}</td>
+          <td>{{ f.origin_airport }} → {{ f.destination_airport }}</td>
+          <td>{{ f.takeoff_date }}</td>
+          <td>{{ f.takeoff_time }}</td>
+          <td>{{ f.flight_status }}</td>
+          <td>{{ f.plane_id }}</td>
+          <td>{{ f.manager_id }}</td>
+          <td>
+            {% if f.flight_status != 'Cancelled' %}
+              <form method="post" action="{{ url_for('admin_cancel_flight', flight_id=f.flight_id) }}"
+                    onsubmit="return confirm('Cancel flight {{ f.flight_id }}?');">
+                <button class="btn btn-outline" type="submit">Cancel</button>
+              </form>
+            {% else %}
+              <span class="muted">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr><td colspan="8" class="empty-row">No flights found.</td></tr>
+      {% endif %}
+      </tbody>
+    </table>
+  </div>
+
 </section>
 {% endblock %}
