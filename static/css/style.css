@@ -531,6 +531,8 @@ main.container{
   align-items: flex-end;
   gap: 12px;
   padding-left: 12px;
+  max-width: 600px;   /* ✅ controls how wide the whole filter area is */
+  margin: 0 auto;     /* ✅ centers it */
 }
 
 .board form.admin-filter > div{
@@ -564,7 +566,7 @@ main.container{
 
 .admin-actions{
   display:flex;
-  gap:25px;
+  gap:30px;
   justify-content:center;   /* ✅ centered row */
   flex-wrap:nowrap;         /* keep in one line */
   margin-top: 10px;
