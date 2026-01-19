@@ -7,6 +7,9 @@
   <h1>Login</h1>
 
   <form method="post" class="form">
+
+  <input type="hidden" name="next" value="{{ next or '' }}">
+
     <label for="email">Email</label>
     <input id="email" type="email" name="email" placeholder="name@example.com" required>
 

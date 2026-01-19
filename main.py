@@ -28,8 +28,12 @@ def home():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    # Where to go after login (e.g. /seats/LY482?class_type=Economy)
+    next_url = request.args.get("next") or request.form.get("next")
+
+    # If already logged in, go to next (if provided) or home
     if session.get("user_email"):
-        return redirect(url_for("home"))
+        return redirect(next_url or url_for("home"))
 
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
@@ -37,7 +41,7 @@ def login():
 
         if not email or not password:
             flash("Please fill in email and password.", "error")
-            return render_template("login.html")
+            return render_template("login.html", next=next_url)
 
         with db_cursor() as cur:
             cur.execute(
@@ -52,14 +56,16 @@ def login():
 
         if not user:
             flash("Invalid email or password.", "error")
-            return render_template("login.html")
+            return render_template("login.html", next=next_url)
 
         session["user_email"] = user["customer_email"]
         flash(f"Welcome back, {user['customer_first_name']}!", "success")
-        return redirect(url_for("home"))
 
-    return render_template("login.html")
+        # Redirect to the page they originally wanted
+        return redirect(next_url or url_for("home"))
 
+    # GET request: show login page (also pass next so template can include it)
+    return render_template("login.html", next=next_url)
 
 @app.route("/logout")
 def logout():
@@ -208,6 +214,96 @@ def book():
         airports=airports
     )
 
+@app.route("/booking/<flight_id>/guest", methods=["GET", "POST"])
+def guest_details(flight_id):
+    flight_id = flight_id.strip().upper()
+
+    # after guest details, continue to the flight page (then seats)
+    next_url = request.args.get("next") or url_for("flight_details", flight_id=flight_id)
+
+    # used to re-fill the form if there is an error
+    form = {"email": "", "full_name": "", "passport_id": "", "phones": []}
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        full_name = request.form.get("full_name", "").strip()
+        passport_id = request.form.get("passport_id", "").strip()  # collected but NOT saved
+        phones = [p.strip() for p in request.form.getlist("phone") if p.strip()]
+
+        form = {"email": email, "full_name": full_name, "passport_id": passport_id, "phones": phones}
+
+        # validation
+        if not email or not full_name or not passport_id or len(phones) == 0:
+            flash("Please fill in all fields (including at least one phone).", "error")
+            return render_template(
+                "guest_details.html",
+                flight_id=flight_id,
+                next_url=next_url,
+                form=form,
+                registered_customer=False
+            )
+
+        # If email belongs to registered customer -> show message then redirect to login
+        with db_cursor() as cur:
+            cur.execute("SELECT 1 FROM Registered_customer WHERE customer_email = %s", (email,))
+            exists = cur.fetchone() is not None
+
+        if exists:
+            login_redirect_url = url_for("login", next=next_url)
+            return render_template(
+                "guest_details.html",
+                flight_id=flight_id,
+                next_url=next_url,
+                form=form,
+                registered_customer=True,
+                login_redirect_url=login_redirect_url
+            )
+
+        # split full name to first/last for Guest table
+        parts = full_name.split()
+        first_name = parts[0]
+        last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
+
+        # Save ONLY: email + first_name + last_name + phones (NOT passport)
+        with db_cursor() as cur:
+            # IMPORTANT: replace column names to match your table if different
+            # This assumes: Guest(guest_email PK, guest_first_name, guest_last_name)
+            cur.execute("""
+                INSERT INTO Guest (guest_email, guest_first_name, guest_last_name)
+                VALUES (%s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                  guest_first_name = VALUES(guest_first_name),
+                  guest_last_name  = VALUES(guest_last_name)
+            """, (email, first_name, last_name))
+
+            # replace phones for that guest
+            # This assumes: Guest_phone(guest_email, guest_phone)
+            cur.execute("DELETE FROM Guest_phone WHERE guest_email = %s", (email,))
+            for ph in phones:
+                cur.execute("""
+                    INSERT INTO Guest_phone (guest_email, guest_phone)
+                    VALUES (%s, %s)
+                """, (email, ph))
+
+        # keep guest info in session so seats() can use it
+        session["guest"] = {
+            "email": email,
+            "first_name": first_name,
+            "last_name": last_name,
+            "phones": phones
+        }
+
+        return redirect(next_url)
+
+    # GET
+    return render_template(
+        "guest_details.html",
+        flight_id=flight_id,
+        next_url=next_url,
+        form=form,
+        registered_customer=False
+    )
+
 @app.route("/flight/<flight_id>")
 def flight_details(flight_id):
     with db_cursor() as cur:
@@ -313,12 +409,12 @@ def seats(flight_id):
                         VALUES (%s, %s, %s, %s, NOW(), 'Pending')
                     """, (oid, flight_id, None, user_email))
                 else:
-                    # Guest order (must store guest_email)
-                    guest_email = request.form.get("guest_email", "").strip().lower()
+                    guest_email = (session.get("guest", {}).get("email") or "").strip().lower()
+
                     if not guest_email:
-                        flash("Guest email is required.", "error")
-                        # Stop here so we don't reserve seats without an order
-                        return redirect(url_for("seats", flight_id=flight_id, class_type=class_type))
+                        flash("Guest details are missing. Please continue as guest again.", "error")
+                        return redirect(url_for("guest_details", flight_id=flight_id,
+                                                next=url_for("seats", flight_id=flight_id, class_type=class_type)))
 
                     cur.execute("""
                         INSERT INTO Orders (order_id, flight_id, guest_email, reg_customer_email, date_of_purchase, order_status)

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Guest Details{% endblock %}
+
+{% block content %}
+<section class="board narrow-board">
+  <h1>Guest Details</h1>
+
+  {# If email belongs to a registered customer -> show message and redirect #}
+  {% if registered_customer %}
+    <div class="flash flash-error" style="margin-top:12px;">
+      Registered customer. To continue please connect to your account.
+    </div>
+
+    <script>
+      setTimeout(() => {
+        window.location.href = "{{ login_redirect_url }}";
+      }, 3000);
+    </script>
+  {% endif %}
+
+  <form method="post" class="form" style="margin-top:12px;">
+    <input type="hidden" name="next" value="{{ next_url }}">
+
+    <label for="email">Email</label>
+    <input id="email" type="email" name="email" required value="{{ form.email or '' }}">
+
+    <label for="full_name">Full name (English)</label>
+    <input id="full_name" type="text" name="full_name" required
+           placeholder="e.g. Maya Oren"
+           value="{{ form.full_name or '' }}">
+
+    <label for="passport_id">Passport ID</label>
+    <input id="passport_id" type="text" name="passport_id" required
+           value="{{ form.passport_id or '' }}">
+
+    <label>Phone numbers</label>
+
+    <div id="phones-wrap" style="display:flex; flex-direction:column; gap:10px;">
+      {# render existing phones if form re-rendered #}
+      {% if form.phones and form.phones|length > 0 %}
+        {% for p in form.phones %}
+          <input type="text" name="phone" placeholder="e.g. 054-1234567" required value="{{ p }}">
+        {% endfor %}
+      {% else %}
+        <input type="text" name="phone" placeholder="e.g. 054-1234567" required>
+      {% endif %}
+    </div>
+
+    <button type="button" class="btn btn-outline" id="add-phone-btn" style="margin-top:8px;">
+      Add phone number
+    </button>
+
+    <button class="btn" type="submit" style="margin-top:12px;">Continue</button>
+  </form>
+</section>
+
+<script>
+  document.getElementById("add-phone-btn").addEventListener("click", () => {
+    const wrap = document.getElementById("phones-wrap");
+    const inp = document.createElement("input");
+    inp.type = "text";
+    inp.name = "phone";
+    inp.placeholder = "e.g. 054-1234567";
+    inp.required = true;
+    wrap.appendChild(inp);
+  });
+</script>
+{% endblock %}
