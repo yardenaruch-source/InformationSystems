@@ -540,7 +540,7 @@ main.container{
 
 .admin-stats{
   display:flex;
-  gap:12px;
+  gap:20px;
   justify-content:center;   /* center the row */
   flex-wrap:nowrap;         /* keep in one line */
   margin: 14px 0;
@@ -564,7 +564,7 @@ main.container{
 
 .admin-actions{
   display:flex;
-  gap:10px;
+  gap:25px;
   justify-content:center;   /* ✅ centered row */
   flex-wrap:nowrap;         /* keep in one line */
   margin-top: 10px;
@@ -575,4 +575,8 @@ main.container{
   display:flex;
   gap:10px;
   align-items:center;
+}
+
+.admin-box{
+  margin-top: 22px;   /* space between the 2 containers */
 }
