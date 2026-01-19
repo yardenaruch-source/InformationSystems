@@ -6,11 +6,11 @@
   <h1>Continue Booking</h1>
 
   <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
-    <a class="btn" href="{{ url_for('login', next=url_for('flight_details', flight_id=flight_id)) }}">
+    <a class="btn" href="{{ url_for('login', next=url_for('booking_log', flight_id=flight_id)) }}">
       Do you have an account? Login
     </a>
 
-    <a class="btn btn-outline" href="{{ url_for('register', next=url_for('flight_details', flight_id=flight_id)) }}">
+    <a class="btn btn-outline" href="{{ url_for('register', next=url_for('booking_log', flight_id=flight_id)) }}">
       Don't have an account? Register
     </a>
 

@@ -58,8 +58,6 @@ VALUES
 (109,'AKL - Auckland','DXB - Dubai',1020),
 (110,'JFK - New York','CDG - Paris',465);
 
-
-
 CREATE TABLE Guest (
   customer_email VARCHAR(100) PRIMARY KEY,
   customer_first_name VARCHAR(60) NOT NULL,
