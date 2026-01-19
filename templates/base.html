@@ -31,8 +31,8 @@
                 </a>
 
                 <a href="{{ url_for('admin') }}"
-                    class="nav-right {% if request.endpoint == 'admin' %}active{% endif %}">
-                    Admin
+                   class="nav-right {% if request.endpoint in ['admin','admin_add_plane','admin_add_route','admin_add_flight'] %}active{% endif %}">
+                  Admin
                 </a>
 
                 {% if session.get("user_email") %}

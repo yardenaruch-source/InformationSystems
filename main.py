@@ -487,10 +487,6 @@ def cancel_order(order_id):
 
 @app.route("/admin", methods=["GET"])
 def admin():
-    return render_template("admin.html")
-
-@app.route("/admin")
-def admin():
     flight_id = request.args.get("flight_id", "").strip().upper()
     status = request.args.get("status", "").strip()
     takeoff_date = request.args.get("takeoff_date", "").strip()
@@ -543,8 +539,8 @@ def admin():
     )
 
 
-@app.route("/admin/planes/new", methods=["GET", "POST"])
-def admin_new_plane():
+@app.route("/admin/add/plane", methods=["GET", "POST"])
+def admin_add_plane():
     if request.method == "POST":
         plane_id = request.form.get("plane_id", "").strip().upper()
         plane_size = request.form.get("plane_size", "").strip()
@@ -567,8 +563,8 @@ def admin_new_plane():
     return render_template("admin_plane_new.html")
 
 
-@app.route("/admin/routes/new", methods=["GET", "POST"])
-def admin_new_route():
+@app.route("/admin/add/route", methods=["GET", "POST"])
+def admin_add_route():
     if request.method == "POST":
         route_id = request.form.get("route_id", "").strip()
         origin = request.form.get("origin_airport", "").strip().upper()
@@ -591,8 +587,8 @@ def admin_new_route():
     return render_template("admin_route_new.html")
 
 
-@app.route("/admin/flights/new", methods=["GET", "POST"])
-def admin_new_flight():
+@app.route("/admin/add/flights", methods=["GET", "POST"])
+def admin_add_flight():
     # GET: show dropdowns for planes/routes/managers
     with db_cursor() as cur:
         cur.execute("SELECT plane_id FROM Plane ORDER BY plane_id")
