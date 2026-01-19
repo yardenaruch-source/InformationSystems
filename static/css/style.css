@@ -549,6 +549,7 @@ main.container{
   justify-content: center;   /* or flex-end if you want right aligned */
   gap: 10px;
   margin-top: 6px;
+  margin-bottom: 25px;
 }
 
 .admin-stats{
@@ -577,7 +578,7 @@ main.container{
 
 .admin-actions{
   display:flex;
-  gap:42px;
+  gap:52px;
   justify-content:center;   /* ✅ centered row */
   flex-wrap:nowrap;         /* keep in one line */
   margin-top: 10px;
