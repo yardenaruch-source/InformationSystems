@@ -10,12 +10,14 @@
      Login
     </a>
 
-    <p class="muted" style="margin-bottom: 14px; font-size: 25px; gap: 10px;" >
+    <p class="muted" style="margin-bottom: 14px; font-size: 20px; gap: 10px;" >
       Don't have an account?
-      <a class="btn btn-outline" href="{{ url_for('register', next=url_for('booking_log', flight_id=flight_id)) }}">
+      <a class="btn" href="{{ url_for('register', next=url_for('booking_log', flight_id=flight_id)) }}">
         Register
       </a>
+    </p>
 
+    <p class="muted" style="margin-bottom: 14px; font-size: 20px; gap: 10px;" >
       <a class="btn" href="{{ url_for('guest_details', flight_id=flight_id) }}">
         Continue as guest
       </a>
