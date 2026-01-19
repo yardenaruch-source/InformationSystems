@@ -22,7 +22,7 @@
     <input type="hidden" name="next" value="{{ next_url }}">
 
     <label for="email">Email</label>
-    <input id="email" type="email" name="email" required value="{{ form.email or '' }}">
+    <input id="email" type="email" name="email" placeholder="name@example.com" required value="{{ form.email or '' }}">
 
     <label for="full_name">Full name (English)</label>
     <input id="full_name" type="text" name="full_name" required
@@ -30,7 +30,7 @@
            value="{{ form.full_name or '' }}">
 
     <label for="passport_id">Passport ID</label>
-    <input id="passport_id" type="text" name="passport_id" required
+    <input id="passport_id" type="text" name="passport_id" placeholder="9 digits" required
            value="{{ form.passport_id or '' }}">
 
     <label>Phone numbers</label>
