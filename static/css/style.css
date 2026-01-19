@@ -186,23 +186,6 @@ main.container{
 }
 
 /* =========================
-   CARDS (Register page uses .card)
-   ========================= */
-.card{
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 18px;
-  padding: 22px;
-  box-shadow: 0 18px 50px rgba(0,0,0,.28);
-  backdrop-filter: blur(6px);
-}
-
-.narrow{
-  width: min(560px,92vw);
-  margin: 0 auto;
-}
-
-/* =========================
    FLASH MESSAGES
    ========================= */
 .flash-wrap{
