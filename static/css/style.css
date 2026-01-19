@@ -578,7 +578,7 @@ main.container{
 
 .admin-actions{
   display:flex;
-  gap:52px;
+  gap:50px;
   justify-content:center;   /* ✅ centered row */
   flex-wrap:nowrap;         /* keep in one line */
   margin-top: 10px;
