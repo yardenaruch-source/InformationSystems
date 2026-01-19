@@ -152,27 +152,39 @@ def book():
     date = request.args.get("date", "").strip()
 
     flights = []
-    if origin and destination and date:
-        with db_cursor() as cur:
-            cur.execute("""
-                SELECT
-                  f.flight_id,
-                  f.takeoff_date,
-                  f.takeoff_time,
-                  r.origin_airport,
-                  r.destination_airport,
-                  MIN(cc.price) AS from_price
-                FROM Flight f
-                JOIN Flight_route r ON r.route_id = f.route_id
-                JOIN Cabin_class cc ON cc.flight_id = f.flight_id
-                WHERE f.flight_status = 'Scheduled'
-                  AND f.takeoff_date = %s
-                  AND r.origin_airport = %s
-                  AND r.destination_airport = %s
-                GROUP BY f.flight_id, f.takeoff_date, f.takeoff_time, r.origin_airport, r.destination_airport
-                ORDER BY f.takeoff_time
-            """, (date, origin, destination))
-            flights = cur.fetchall()
+
+    with db_cursor() as cur:
+        cur.execute("""
+            SELECT DISTINCT origin_airport AS airport
+            FROM Flight_route
+            UNION
+            SELECT DISTINCT destination_airport AS airport
+            FROM Flight_route
+            ORDER BY airport
+        """)
+        airports = [r["airport"] for r in cur.fetchall()]
+
+        if origin and destination and date:
+
+                cur.execute("""
+                    SELECT
+                      f.flight_id,
+                      f.takeoff_date,
+                      f.takeoff_time,
+                      r.origin_airport,
+                      r.destination_airport,
+                      MIN(cc.price) AS from_price
+                    FROM Flight f
+                    JOIN Flight_route r ON r.route_id = f.route_id
+                    JOIN Cabin_class cc ON cc.flight_id = f.flight_id
+                    WHERE f.flight_status = 'Scheduled'
+                      AND f.takeoff_date = %s
+                      AND r.origin_airport = %s
+                      AND r.destination_airport = %s
+                    GROUP BY f.flight_id, f.takeoff_date, f.takeoff_time, r.origin_airport, r.destination_airport
+                    ORDER BY f.takeoff_time
+                """, (date, origin, destination))
+                flights = cur.fetchall()
 
     return render_template(
         "book.html",
