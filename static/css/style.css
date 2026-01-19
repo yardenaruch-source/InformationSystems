@@ -523,3 +523,16 @@ main.container{
     border-radius: 9px;
   }
 }
+
+.board form.admin-filter{
+  flex-direction: row;     /* override the global column */
+  flex-wrap: nowrap;       /* keep in one line */
+  align-items: flex-end;
+  gap: 10px;
+  padding-left: 10px;
+}
+
+.board form.admin-filter > div{
+  display: flex;
+  flex-direction: column;  /* label above input */
+}

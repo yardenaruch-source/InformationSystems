@@ -30,11 +30,6 @@
                     My Tickets
                 </a>
 
-                <a href="{{ url_for('admin') }}"
-                   class="nav-right {% if request.endpoint in ['admin','admin_add_plane','admin_add_route','admin_add_flight'] %}active{% endif %}">
-                  Admin
-                </a>
-
                 {% if session.get("user_email") %}
                   <span class="nav-user">Logged in: {{ session.get("user_email") }}</span>
 
@@ -49,6 +44,11 @@
                       Login
                   </a>
                 {% endif %}
+
+                <a href="{{ url_for('admin') }}"
+                    class="nav-right {% if request.endpoint in ['admin','admin_add_plane','admin_add_route','admin_add_flight'] %}active{% endif %}">
+                    Admin
+                </a>
             </nav>
         </div>
     </header>
