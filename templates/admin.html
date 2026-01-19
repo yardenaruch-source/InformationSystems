@@ -5,7 +5,7 @@
 <section class="board">
   <h2>Admin Dashboard</h2>
 
-  <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; text-align: center;">
+  <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px;">
     <div class="board" style="padding:12px; min-width:160px;">
       <b>Planes</b><br>
       <span style="font-size:24px;">{{ planes_count }}</span>
@@ -20,7 +20,7 @@
     </div>
   </div>
 
-  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; ">
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; text-align: center;">
     <a class="btn" href="{{ url_for('admin_add_plane') }}">+ Add Plane</a>
     <a class="btn" href="{{ url_for('admin_add_route') }}">+ Add Route</a>
     <a class="btn" href="{{ url_for('admin_add_flight') }}">+ Add Flight</a>
@@ -32,12 +32,12 @@
 
   <form method="get" class="form"">
     <div>
-      <label class="field-label">Flight ID</label>
-      <input class="field-input" name="flight_id" value="{{ filters.flight_id }}" placeholder="e.g. F1234">
+      <label>Flight ID</label>
+      <input name="flight_id" value="{{ filters.flight_id }}" placeholder="e.g. F1234">
     </div>
     <div>
-      <label class="field-label">Status</label>
-      <select class="field-input" name="status">
+      <label>Status</label>
+      <select cname="status">
         <option value="" {% if not filters.status %}selected{% endif %}>All</option>
         <option value="Scheduled" {% if filters.status=='Scheduled' %}selected{% endif %}>Scheduled</option>
         <option value="Full" {% if filters.status=='Full' %}selected{% endif %}>Full</option>
@@ -46,8 +46,8 @@
       </select>
     </div>
     <div>
-      <label class="field-label">Takeoff Date</label>
-      <input class="field-input" type="date" name="takeoff_date" value="{{ filters.takeoff_date }}">
+      <label>Takeoff Date</label>
+      <input type="date" name="takeoff_date" value="{{ filters.takeoff_date }}">
     </div>
     <button class="btn" type="submit">Filter</button>
     <a class="btn btn-outline" href="{{ url_for('admin') }}">Reset</a>
