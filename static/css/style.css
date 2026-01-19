@@ -243,6 +243,7 @@ main.container{
   width: min(1080px, 92vw);
   margin: 60px auto;
   background: rgba(255,255,255,0.92);
+  background: rgba(255,255,255,0.92);
   border-radius: 14px;
   padding: 22px;
   box-shadow: 0 14px 30px rgba(0,0,0,0.18);
@@ -528,8 +529,8 @@ main.container{
   flex-direction: row;     /* override the global column */
   flex-wrap: nowrap;       /* keep in one line */
   align-items: flex-end;
-  gap: 10px;
-  padding-left: 10px;
+  gap: 12px;
+  padding-left: 12px;
 }
 
 .board form.admin-filter > div{

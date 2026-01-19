@@ -5,22 +5,22 @@
 <section class="board">
   <h2>Admin Dashboard</h2>
 
-  <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px;">
-    <div class="card" style="padding:12px; min-width:160px;">
+  <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; text-align: center;">
+    <div class="board" style="padding:12px; min-width:160px;">
       <b>Planes</b><br>
       <span style="font-size:24px;">{{ planes_count }}</span>
     </div>
-    <div class="card" style="padding:12px; min-width:160px;">
+    <div class="board" style="padding:12px; min-width:160px;">
       <b>Routes</b><br>
       <span style="font-size:24px;">{{ routes_count }}</span>
     </div>
-    <div class="card" style="padding:12px; min-width:160px;">
+    <div class="board" style="padding:12px; min-width:160px;">
       <b>Flights</b><br>
       <span style="font-size:24px;">{{ flights_count }}</span>
     </div>
   </div>
 
-  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; text-align: center;">
     <a class="btn" href="{{ url_for('admin_add_plane') }}">+ Add Plane</a>
     <a class="btn" href="{{ url_for('admin_add_route') }}">+ Add Route</a>
     <a class="btn" href="{{ url_for('admin_add_flight') }}">+ Add Flight</a>
@@ -28,9 +28,9 @@
 
   <hr style="margin:18px 0; opacity:0.35;">
 
-  <h3>Flights</h3>
+  <h1>Flights</h1>
 
-  <form method="get" class="admin-filter" style="margin:10px 0 14px;">
+  <form method="get" class="form" style="margin:10px 0 14px;">
     <div>
       <label class="field-label">Flight ID</label>
       <input class="field-input" name="flight_id" value="{{ filters.flight_id }}" placeholder="e.g. F1234">
