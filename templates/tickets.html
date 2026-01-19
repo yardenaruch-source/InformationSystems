@@ -34,7 +34,9 @@
     <p><b>Total:</b> ₪{{ total }}</p>
 
     {% if can_cancel %}
-      <a class="btn btn-outline" href="{{ url_for('cancel_order', order_id=order.order_id) }}">Cancel Order</a>
+      <form method="post" action="{{ url_for('cancel_order', order_id=order.order_id) }}">
+        <button class="btn btn-outline" type="submit">Cancel Order</button>
+      </form>
     {% endif %}
   {% endif %}
 </section>

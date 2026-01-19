@@ -451,7 +451,7 @@ def tickets():
 
     return render_template("tickets.html", order=order, seats=seats, total=total, can_cancel=can_cancel)
 
-@app.route("/cancel/<order_id>")
+@app.route("/cancel/<order_id>", methods=["POST"])
 def cancel_order(order_id):
     with db_cursor() as cur:
         # fetch order + flight time
