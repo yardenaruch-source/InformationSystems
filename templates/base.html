@@ -16,12 +16,12 @@
             </a>
             <nav class="nav">
                 <a href="{{ url_for('home') }}"
-                   class="{% if request.endpoint in ['booking_log', 'home'] %}active{% endif %}">
+                   class="{% if request.endpoint ='home' %}active{% endif %}">
                     Home
                 </a>
 
                 <a href="{{ url_for('book') }}"
-                   class="{% if request.endpoint == 'book' %}active{% endif %}">
+                    class="{% if request.endpoint in ['book', 'booking_log'] %}active{% endif %}">
                     Book a flight
                 </a>
 
