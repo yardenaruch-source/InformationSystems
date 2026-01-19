@@ -4,7 +4,7 @@
 <div class="board">
   <!-- Search row -->
   <form class="board-search" method="get" action="{{ url_for('book') }}">
-    <div class="board-field">
+    <div>
       <label>From City</label>
       <input type="text" name="origin" value="{{ origin or '' }}" placeholder="From City" required>
     </div>
