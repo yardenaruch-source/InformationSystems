@@ -151,9 +151,8 @@ def book():
     destination = request.args.get("destination", "").strip()
     date = request.args.get("date", "").strip()
 
-    flights = []
-
     with db_cursor() as cur:
+        # dropdown list
         cur.execute("""
             SELECT DISTINCT origin_airport AS airport FROM Flight_route
             UNION
@@ -162,28 +161,43 @@ def book():
         """)
         airports = [r["airport"] for r in cur.fetchall()]
 
-        if origin and destination and date:
-            cur.execute("""
-                SELECT
-                  f.flight_id,
-                  f.takeoff_date,
-                  f.takeoff_time,
-                  r.origin_airport,
-                  r.destination_airport,
-                  p.price AS from_price
-                FROM Flight f
-                JOIN Flight_route r ON r.route_id = f.route_id
-                JOIN Flight_Class_Pricing p
-                  ON p.flight_id = f.flight_id
-                 AND p.plane_id = f.plane_id
-                 AND p.class_type = 'Economy'
-                WHERE f.flight_status = 'Scheduled'
-                  AND f.takeoff_date = %s
-                  AND r.origin_airport = %s
-                  AND r.destination_airport = %s
-                ORDER BY f.takeoff_time
-            """, (date, origin, destination))
-            flights = cur.fetchall()
+        # base query: show ALL scheduled flights
+        sql = """
+            SELECT
+              f.flight_id,
+              f.takeoff_date,
+              f.takeoff_time,
+              r.origin_airport,
+              r.destination_airport,
+              MIN(p.price) AS from_price
+            FROM Flight f
+            JOIN Flight_route r ON r.route_id = f.route_id
+            LEFT JOIN Flight_Class_Pricing p
+              ON p.flight_id = f.flight_id
+             AND p.plane_id = f.plane_id
+             AND p.class_type = 'Economy'
+            WHERE f.flight_status = 'Scheduled'
+        """
+        params = []
+
+        # apply filters only if user chose them
+        if date:
+            sql += " AND f.takeoff_date = %s"
+            params.append(date)
+        if origin:
+            sql += " AND r.origin_airport = %s"
+            params.append(origin)
+        if destination:
+            sql += " AND r.destination_airport = %s"
+            params.append(destination)
+
+        sql += """
+            GROUP BY f.flight_id, f.takeoff_date, f.takeoff_time, r.origin_airport, r.destination_airport
+            ORDER BY f.takeoff_date, f.takeoff_time
+        """
+
+        cur.execute(sql, params)
+        flights = cur.fetchall()
 
     return render_template(
         "book.html",
