@@ -1,5 +1,22 @@
 USE yardenaruch$FLYTAUdb;
 
+DROP TABLE IF EXISTS Flight_attendants_in_flights;
+DROP TABLE IF EXISTS Pilots_in_flights;
+DROP TABLE IF EXISTS Flight_Class_Pricing;
+DROP TABLE IF EXISTS Seat;
+DROP TABLE IF EXISTS Cabin_class;
+DROP TABLE IF EXISTS Orders;
+DROP TABLE IF EXISTS Flight;
+DROP TABLE IF EXISTS Flight_attendant;
+DROP TABLE IF EXISTS Pilot;
+DROP TABLE IF EXISTS Manager;
+DROP TABLE IF EXISTS Registered_customer_phone;
+DROP TABLE IF EXISTS Registered_customer;
+DROP TABLE IF EXISTS Guest_phone;
+DROP TABLE IF EXISTS Guest;
+DROP TABLE IF EXISTS Flight_route;
+DROP TABLE IF EXISTS Plane;
+
 CREATE TABLE Plane (
   plane_id VARCHAR(5) PRIMARY KEY,
   plane_size ENUM('Small','Large') NOT NULL,
