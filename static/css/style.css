@@ -349,7 +349,7 @@ main.container{
   border: none;
   cursor: pointer;
   font-weight: 700;
-  background: #9ed3d0;
+  background: var(--nav-text);
   box-shadow: 0 8px 18px rgba(0,0,0,0.14);
 }
 
@@ -504,12 +504,6 @@ main.container{
     height: 36px;
     font-size: 13px;
     padding: 0 10px;
-  }
-
-  .board-btn{
-    height: 36px;
-    padding: 0 12px;
-    font-size: 13px;
   }
 
   .board-field label{
