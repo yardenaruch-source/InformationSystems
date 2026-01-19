@@ -20,7 +20,7 @@
     </div>
   </div>
 
-  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; text-align: center;">
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px; ">
     <a class="btn" href="{{ url_for('admin_add_plane') }}">+ Add Plane</a>
     <a class="btn" href="{{ url_for('admin_add_route') }}">+ Add Route</a>
     <a class="btn" href="{{ url_for('admin_add_flight') }}">+ Add Flight</a>
@@ -30,7 +30,7 @@
 
   <h1>Flights</h1>
 
-  <form method="get" class="form" style="margin:10px 0 14px;">
+  <form method="get" class="form"">
     <div>
       <label class="field-label">Flight ID</label>
       <input class="field-input" name="flight_id" value="{{ filters.flight_id }}" placeholder="e.g. F1234">
