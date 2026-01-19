@@ -3,22 +3,23 @@
 
 {% block content %}
 <section class="board narrow-board">
-  <h1>Continue Booking</h1>
+  <h1>Do you have an account?</h1>
 
   <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px;">
-    <p class="muted" style="margin-top: 14px; font-size: 15px; gap: 10px;" >
-      Do you have an account?
-      <a class="btn" href="{{ url_for('login', next=url_for('booking_log', flight_id=flight_id)) }}">
-       Login
+    <a class="btn" href="{{ url_for('login', next=url_for('booking_log', flight_id=flight_id)) }}">
+     Login
+    </a>
+
+    <p class="muted" style="margin-bottom: 14px; font-size: 25px; gap: 10px;" >
+      Don't have an account?
+      <a class="btn btn-outline" href="{{ url_for('register', next=url_for('booking_log', flight_id=flight_id)) }}">
+        Register
       </a>
 
-    <a class="btn btn-outline" href="{{ url_for('register', next=url_for('booking_log', flight_id=flight_id)) }}">
-      Don't have an account? Register
-    </a>
-
-    <a class="btn" href="{{ url_for('guest_details', flight_id=flight_id) }}">
-      Continue as guest
-    </a>
+      <a class="btn" href="{{ url_for('guest_details', flight_id=flight_id) }}">
+        Continue as guest
+      </a>
+    </p>
   </div>
 </section>
 {% endblock %}
