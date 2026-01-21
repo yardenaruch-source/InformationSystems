@@ -198,12 +198,12 @@ main.container{
   border: none;
   background: transparent;
   padding: 0;
-  margin-left: 30px;
+  margin-left: 20px;
   border-radius: 0;
 
   color: #d60000;  /* red */
   font-weight: 300;
-  font-size: 12px;
+  font-size: 14px;
 }
 
 .flash-success{ border-color: rgba(80,255,160,.35); }
