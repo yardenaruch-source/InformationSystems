@@ -58,7 +58,11 @@
             <td>{{ f.takeoff_time }}</td>
             <td>₪{{ f.from_price }}</td>
             <td>
-              <a class="book-btn" href="{{ url_for('booking_log', flight_id=f.flight_id) }}">Book</a>
+              {% if session.get('user_email') %}
+                <a class="btn" href="{{ url_for('flight_details', flight_id=f.flight_id) }}">Book</a>
+              {% else %}
+                <a class="btn" href="{{ url_for('booking_log', flight_id=f.flight_id, next=url_for('flight_details', flight_id=f.flight_id)) }}">Book</a>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}
