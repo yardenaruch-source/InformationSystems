@@ -117,7 +117,7 @@ INSERT INTO Registered_customer_phone (customer_email, customer_phone) VALUES
 ('yossi.dahan@gmail.com','055-7238515'),
 ('maya.oren@gmail.com','058-2746195'),
 ('maya.oren@gmail.com','058-5696169');
-('upsidedown@gmail.com', '050-734-8291');
+('upsidedown@gmail.com','050-7348291');
 
 CREATE TABLE Manager (
   employee_id VARCHAR(9) PRIMARY KEY,
