@@ -5,19 +5,6 @@
 <section class="board narrow-board">
   <h1>Guest Details</h1>
 
-  {# If email belongs to a registered customer -> show message and redirect #}
-  {% if registered_customer %}
-    <div class="flash flash-error" style="margin-top:12px;">
-      Registered customer. To continue please connect to your account.
-    </div>
-
-    <script>
-      setTimeout(() => {
-        window.location.href = "{{ login_redirect_url }}";
-      }, 3000);
-    </script>
-  {% endif %}
-
   <form method="post" class="form" style="margin-top:12px;">
     <input type="hidden" name="next" value="{{ next_url }}">
 

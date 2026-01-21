@@ -33,7 +33,7 @@
                 {% if session.get("user_email") %}
                   <span class="nav-user">Logged in: {{ session.get("user_email") }}</span>
 
-                  <a class="btn btn-outline {% if request.endpoint == 'logout' %}active{% endif %}"
+                  <a class="btn {% if request.endpoint == 'logout' %}active{% endif %}"
                      href="{{ url_for('logout') }}">
                     Logout
                   </a>

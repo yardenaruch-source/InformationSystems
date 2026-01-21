@@ -62,8 +62,9 @@ def login():
         session["user_email"] = user["customer_email"]
         flash(f"Welcome back, {user['customer_first_name']}!", "success")
 
-        # Redirect to the page they originally wanted
-        return redirect(next_url or url_for("home"))
+        if next_url and is_safe_url(next_url):
+            return redirect(next_url)
+        return redirect(url_for("home"))
 
     # GET request: show login page (also pass next so template can include it)
     return render_template("login.html", next=next_url)
@@ -268,15 +269,8 @@ def guest_details(flight_id):
             exists = cur.fetchone() is not None
 
         if exists:
-            login_redirect_url = url_for("login", next=next_url)
-            return render_template(
-                "guest_details.html",
-                flight_id=flight_id,
-                next_url=next_url,
-                form=form,
-                registered_customer=True,
-                login_redirect_url=login_redirect_url
-            )
+            flash("This email belongs to a registered customer. Please log in.", "error")
+            return redirect(url_for("login", next=url_for("flight_details", flight_id=flight_id)))
 
         # split full name to first/last for Guest table
         parts = full_name.split()
