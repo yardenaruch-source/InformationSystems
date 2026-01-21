@@ -269,7 +269,7 @@ def guest_details(flight_id):
             exists = cur.fetchone() is not None
 
         if exists:
-            flash("This email belongs to a registered customer. Please log in.", "error")
+            flash("This email belongs to a registered customer.\n Please log in.", "error")
             return redirect(url_for("login", next=url_for("flight_details", flight_id=flight_id)))
 
         # split full name to first/last for Guest table
