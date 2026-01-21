@@ -25,6 +25,11 @@ def current_user():
 @app.route("/")
 def home():
     user = current_user()
+
+    just_name = session.pop("just_logged_in_name", None)
+    if just_name:
+        flash(f"Welcome back, {just_name}!", "success")
+
     return render_template("index.html", user=user)
 
 @app.route("/login", methods=["GET", "POST"])
@@ -60,7 +65,7 @@ def login():
             return render_template("login.html", next=next_url)
 
         session["user_email"] = user["customer_email"]
-        flash(f"Welcome back, {user['customer_first_name']}!", "success")
+        session["just_logged_in_name"] = user["customer_first_name"]
 
         if next_url and is_safe_url(next_url):
             return redirect(next_url)
