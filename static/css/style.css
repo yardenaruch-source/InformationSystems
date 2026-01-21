@@ -205,7 +205,14 @@ main.container{
   font-size: 15px;
 }
 
-.flash-success{ color: #000000; }
+.flash-success{
+  margin: 0 0 18px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  color: #0b2a3a;
+  font-size: 18px;
+}
+
 .flash-error{ color: #d60000; }
 
 /* =========================
