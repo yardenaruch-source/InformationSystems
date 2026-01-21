@@ -1,41 +1,45 @@
 {% extends "base.html" %}
 
-{% block title %}הרשמה - FLYTAU{% endblock %}
+{% block title %}Register - FLYTAU{% endblock %}
 
 {% block content %}
 <section class="board narrow-board">
   <h1>Register</h1>
 
   <form method="post" class="form">
+    {% if next %}
+      <input type="hidden" name="next" value="{{ next }}">
+    {% endif %}
+
     <label for="first_name">First name</label>
-    <input id="first_name" type="text" name="first_name" placeholder="In English" required>
+    <input id="first_name" type="text" name="first_name" placeholder="In English" required
+           value="{{ form.first_name }}">
 
     <label for="last_name">Last name</label>
-    <input id="last_name" type="text" name="last_name" placeholder="In English" required>
+    <input id="last_name" type="text" name="last_name" placeholder="In English" required
+           value="{{ form.last_name }}">
 
     <label for="email">Email</label>
-    <input id="email" type="email" name="email" placeholder="name@example.com" required>
+    <input id="email" type="email" name="email" placeholder="name@example.com" required
+           value="{{ form.email }}">
 
     <label for="password">Password</label>
     <input id="password" type="password" name="password" maxlength="8" placeholder="Up to 8 characters" required>
 
     <label for="passport_id">Passport ID</label>
-    <input id="passport_id" type="text" name="passport_id" maxlength="9" placeholder="9 digits" required>
+    <input id="passport_id" type="text" name="passport_id" maxlength="9" placeholder="9 digits" required
+           value="{{ form.passport_id }}">
 
     <label for="birth_date">Birth date</label>
-    <input id="birth_date" type="date" name="birth_date" min="1900-01-01" max="{{ today }}" required>
+    <input id="birth_date" type="date" name="birth_date" min="1900-01-01" max="{{ today }}" required
+           value="{{ form.birth_date }}">
 
     <label>Phone numbers</label>
 
     <div id="phones-wrap" style="display:flex; flex-direction:column; gap:10px;">
-      {# render existing phones if form re-rendered #}
-      {% if form.phones and form.phones|length > 0 %}
-        {% for p in form.phones %}
-          <input type="text" name="phone" placeholder="e.g. 054-1234567" required value="{{ p }}">
-        {% endfor %}
-      {% else %}
-        <input type="text" name="phone" placeholder="e.g. 054-1234567" required>
-      {% endif %}
+      {% for p in form.phones %}
+        <input type="text" name="phone" placeholder="e.g. 054-1234567" required value="{{ p }}">
+      {% endfor %}
     </div>
 
     <button type="button" class="btn" id="add-phone-btn" style="margin-top:8px;">
@@ -44,6 +48,19 @@
 
     <button class="btn" type="submit">Create account</button>
   </form>
-
 </section>
+
+<script>
+  const wrap = document.getElementById("phones-wrap");
+  const btn = document.getElementById("add-phone-btn");
+
+  btn.addEventListener("click", () => {
+    const input = document.createElement("input");
+    input.type = "text";
+    input.name = "phone";
+    input.placeholder = "e.g. 054-1234567";
+    input.required = true;
+    wrap.appendChild(input);
+  });
+</script>
 {% endblock %}
