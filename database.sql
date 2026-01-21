@@ -117,6 +117,9 @@ INSERT INTO Registered_customer_phone (customer_email, customer_phone) VALUES
 ('maya.oren@gmail.com','058-2746195'),
 ('maya.oren@gmail.com','058-5696169');
 
+INSERT INTO Registered_customer_phone (customer_email, customer_phone)
+VALUES ('upsidedown@gmail.com', '050-734-8291');
+
 CREATE TABLE Manager (
   employee_id VARCHAR(9) PRIMARY KEY,
   employee_first_name VARCHAR(60) NOT NULL,
@@ -259,7 +262,6 @@ CREATE TABLE Cabin_class (
   FOREIGN KEY (plane_id) REFERENCES Plane(plane_id),
   CONSTRAINT chk_class_dim CHECK (columns_num > 0 AND rows_num > 0)
 );
-
 
 INSERT INTO Cabin_class
 (plane_id, class_type, columns_num, rows_num)
