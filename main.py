@@ -359,11 +359,19 @@ def flight_details(flight_id):
 
         # cabin classes (price + dimensions)
         cur.execute("""
-            SELECT class_type, rows_num, columns_num
-            FROM Cabin_class
-            WHERE plane_id = %s
-            ORDER BY class_type
-        """, (flight["plane_id"],))
+            SELECT
+              cc.class_type,
+              cc.rows_num,
+              cc.columns_num,
+              p.price
+            FROM Cabin_class cc
+            LEFT JOIN Flight_Class_Pricing p
+              ON p.flight_id = %s
+             AND p.plane_id  = cc.plane_id
+             AND p.class_type = cc.class_type
+            WHERE cc.plane_id = %s
+            ORDER BY cc.class_type
+        """, (flight_id, flight["plane_id"]))
         cabins = cur.fetchall()
 
         # availability per class (count seats where order_id is NULL)
