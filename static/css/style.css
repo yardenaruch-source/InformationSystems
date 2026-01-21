@@ -202,8 +202,8 @@ main.container{
   border-radius: 0;
 
   color: #d60000;  /* red */
-  font-weight: 300;
-  font-size: 14px;
+  font-weight: 350;
+  font-size: 15px;
 }
 
 .flash-success{ border-color: rgba(80,255,160,.35); }
