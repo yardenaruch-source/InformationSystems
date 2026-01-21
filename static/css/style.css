@@ -200,7 +200,7 @@ main.container{
   padding: 0;
   margin-left: 20px;
   border-radius: 0;
-
+  white-space: pre-line;
   font-weight: 350;
   font-size: 15px;
 }
