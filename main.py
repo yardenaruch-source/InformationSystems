@@ -118,24 +118,34 @@ def register():
         password = request.form.get("password", "").strip()
         passport_id = request.form.get("passport_id", "").strip()
         birth_date = request.form.get("birth_date", "").strip()
+        phones = [p.strip() for p in request.form.getlist("phone") if p.strip()]
+
+        form = {
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email,
+            "passport_id": passport_id,
+            "birth_date": birth_date,
+            "phones": phones
+        }
 
         if not all([first_name, last_name, email, password, passport_id, birth_date]):
             flash("Please fill in all fields.", "error")
-            return render_template("register.html", today=today, next=next_url)
+            return render_template("register.html", today=today, next=next_url, form=form)
 
         if len(password) > 8:
             flash("Password must be at most 8 characters.", "error")
-            return render_template("register.html", today=today, next=next_url)
+            return render_template("register.html", today=today, next=next_url, form=form)
 
         try:
             bd = datetime.strptime(birth_date, "%Y-%m-%d").date()
         except ValueError:
             flash("Invalid birth date.", "error")
-            return render_template("register.html", today=today, next=next_url)
+            return render_template("register.html", today=today, next=next_url, form=form)
 
         if bd < date(1900, 1, 1) or bd > date.today():
             flash("Birth date must be between 1900-01-01 and today.", "error")
-            return render_template("register.html", today=today, next=next_url)
+            return render_template("register.html", today=today, next=next_url, form=form)
 
         try:
             with db_cursor() as cur:
@@ -146,7 +156,7 @@ def register():
                 """, (email,))
                 if cur.fetchone():
                     flash("That email is already registered.", "error")
-                    return render_template("register.html", today=today, next=next_url)
+                    return render_template("register.html", today=today, next=next_url, form=form)
 
                 cur.execute("""
                     SELECT 1
@@ -155,13 +165,21 @@ def register():
                 """, (passport_id,))
                 if cur.fetchone():
                     flash("That passport ID is already in use.", "error")
-                    return render_template("register.html", today=today, next=next_url)
+                    return render_template("register.html", today=today, next=next_url, form=form)
 
                 cur.execute("""
                     INSERT INTO Registered_customer
                     (customer_email, customer_first_name, customer_last_name, customer_password, passport_id, birth_date, sign_up_date)
                     VALUES (%s, %s, %s, %s, %s, %s, CURDATE())
                 """, (email, first_name, last_name, password, passport_id, birth_date))
+
+                # Replace phones (delete then insert)
+                cur.execute("DELETE FROM Registered_customer_phone WHERE customer_email = %s", (email,))
+                for ph in phones:
+                    cur.execute("""
+                        INSERT INTO Registered_customer_phone (customer_email, customer_phone)
+                        VALUES (%s, %s)
+                    """, (email, ph))
 
             flash("Registration successful! Please log in.", "success")
 
@@ -172,10 +190,10 @@ def register():
 
         except Exception:
             flash("Registration failed. Please try again.", "error")
-            return render_template("register.html", today=today, next=next_url)
+            return render_template("register.html", today=today, next=next_url, form=form)
 
     # GET
-    return render_template("register.html", today=today, next=next_url)
+    return render_template("register.html", today=today, next=next_url, form=None)
 
 @app.route("/book", methods=["GET"])
 def book():
