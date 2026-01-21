@@ -208,9 +208,8 @@ main.container{
 .flash-success{
   margin: 0 0 18px;
   font-weight: 500;
-  letter-spacing: 0.5px;
   color: #0b2a3a;
-  font-size: 18px;
+  font-size: 20px;
 }
 
 .flash-error{ color: #d60000; }
