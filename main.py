@@ -88,6 +88,7 @@ def booking_log(flight_id):
 @app.route("/logout")
 def logout():
     session.pop("user_email", None)
+    session.pop("just_logged_in_name", None)
     flash("You were logged out", "success")
     return redirect(url_for("home"))
 

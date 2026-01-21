@@ -25,6 +25,23 @@
     <label for="birth_date">Birth date</label>
     <input id="birth_date" type="date" name="birth_date" min="1900-01-01" max="{{ today }}" required>
 
+    <label>Phone numbers</label>
+
+    <div id="phones-wrap" style="display:flex; flex-direction:column; gap:10px;">
+      {# render existing phones if form re-rendered #}
+      {% if form.phones and form.phones|length > 0 %}
+        {% for p in form.phones %}
+          <input type="text" name="phone" placeholder="e.g. 054-1234567" required value="{{ p }}">
+        {% endfor %}
+      {% else %}
+        <input type="text" name="phone" placeholder="e.g. 054-1234567" required>
+      {% endif %}
+    </div>
+
+    <button type="button" class="btn" id="add-phone-btn" style="margin-top:8px;">
+      + Add phone number
+    </button>
+
     <button class="btn" type="submit">Create account</button>
   </form>
 
