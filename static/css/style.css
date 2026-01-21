@@ -201,13 +201,12 @@ main.container{
   margin-left: 20px;
   border-radius: 0;
 
-  color: #d60000;  /* red */
   font-weight: 350;
   font-size: 15px;
 }
 
-.flash-success{ border-color: rgba(80,255,160,.35); }
-.flash-error{ border-color: rgba(255,80,80,.35); }
+.flash-success{ color: #000000; }
+.flash-error{ color: #d60000; }
 
 /* =========================
    BUTTONS (used for Logout in navbar + anywhere else)
