@@ -99,7 +99,7 @@ INSERT INTO Registered_customer
 VALUES
 ('roni.katz@gmail.com','Roni','Katz','Rc123456','A12345678','1996-04-12','2025-12-01'),
 ('yossi.dahan@gmail.com','Yossi','Dahan','Rc234567','B23456789','1990-09-03','2025-11-20'),
-('maya.oren@gmail.com','Maya','Oren','Rc345678','C34567890','2001-02-18','2025-10-05');
+('maya.oren@gmail.com','Maya','Oren','Rc345678','C34567890','2001-02-18','2025-10-05'),
 ('upsidedown@gmail.com', 'Will', 'Byers', 'iluvmike', 'H06111983', '1971-03-22', '2026-01-21');
 
 
@@ -116,7 +116,7 @@ INSERT INTO Registered_customer_phone (customer_email, customer_phone) VALUES
 ('yossi.dahan@gmail.com','055-9031846'),
 ('yossi.dahan@gmail.com','055-7238515'),
 ('maya.oren@gmail.com','058-2746195'),
-('maya.oren@gmail.com','058-5696169');
+('maya.oren@gmail.com','058-5696169'),
 ('upsidedown@gmail.com','050-7348291');
 
 CREATE TABLE Manager (
