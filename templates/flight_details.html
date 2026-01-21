@@ -14,7 +14,7 @@
     {% for c in cabins %}
       <div class="card" style="min-width:240px;">
         <h4>{{ c.class_type }}</h4>
-        <p>Price: ₪{{ c.price }}</p>
+        <p>Price: {{ c.price }} ₪</p>
         <p class="muted">Available seats: {{ c.available }}</p>
         <a class="btn" href="{{ url_for('seats', flight_id=flight.flight_id, class_type=c.class_type) }}">
           Select seats
