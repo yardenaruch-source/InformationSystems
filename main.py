@@ -845,6 +845,22 @@ def admin_add_flight():
         """)
         managers = cur.fetchall()
 
+        # ✅ add this:
+        cur.execute("""
+            SELECT plane_id, class_type, rows_num, columns_num
+            FROM Cabin_class
+        """)
+        cc = cur.fetchall()
+
+    layout_map = {}
+    for x in cc:
+        pid = x["plane_id"]
+        layout_map.setdefault(pid, {})
+        layout_map[pid][x["class_type"]] = {
+            "rows": int(x["rows_num"]),
+            "cols": int(x["columns_num"])
+        }
+
     if request.method == "POST":
         flight_id = request.form.get("flight_id", "").strip().upper()
         route_id = request.form.get("route_id", "").strip()
@@ -858,12 +874,13 @@ def admin_add_flight():
 
         if not all([flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time]):
             flash("Please fill in the required flight fields.", "error")
-            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers)
+            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map)
 
         # require prices (per your requirement)
         if not econ_price or not bus_price:
             flash("Please enter Economy and Business prices.", "error")
-            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers)
+            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map)
+
         try:
             with db_cursor() as cur:
                 # 1) Get layout from Cabin_class for the selected plane
@@ -878,7 +895,7 @@ def admin_add_flight():
 
                 if "Economy" not in layout or "Business" not in layout:
                     flash("This plane is missing cabin layout (Economy/Business) in Cabin_class.", "error")
-                    return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers)
+                    return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map)
 
                 econ_rows, econ_cols = layout["Economy"]
                 bus_rows, bus_cols = layout["Business"]
@@ -917,13 +934,13 @@ def admin_add_flight():
 
         except mysql.connector.Error as e:
             flash(f"Database error: {e.msg}", "error")
-            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers)
+            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map)
 
 
         flash("Flight created successfully.", "success")
         return redirect(url_for("admin"))
 
-    return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers)
+    return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map)
 
 
 

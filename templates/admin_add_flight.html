@@ -44,12 +44,24 @@
         <b>Economy</b>
         <label class="field-label">Price</label>
         <input class="field-input" type="number" step="0.01" min="0" name="econ_price" placeholder="e.g. 399.00">
+
+        <label class="field-label">Rows</label>
+        <input class="field-input" id="econ_rows" type="text" readonly>
+
+        <label class="field-label">Columns</label>
+        <input class="field-input" id="econ_cols" type="text" readonly>
       </div>
 
       <div class="card" style="padding:12px;">
         <b>Business</b>
         <label class="field-label">Price</label>
         <input class="field-input" type="number" step="0.01" min="0" name="bus_price" placeholder="e.g. 999.00">
+
+        <label class="field-label">Rows</label>
+        <input class="field-input" id="bus_rows" type="text" readonly>
+
+        <label class="field-label">Columns</label>
+        <input class="field-input" id="bus_cols" type="text" readonly>
       </div>
     </div>
 
@@ -59,3 +71,27 @@
   </form>
 </section>
 {% endblock %}
+
+<script>
+  const layoutMap = {{ layout_map|tojson }};
+  const planeSelect = document.querySelector('select[name="plane_id"]');
+
+  function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = (val ?? "-");
+  }
+
+  function updateLayout() {
+    const pid = planeSelect.value;
+    const econ = layoutMap?.[pid]?.["Economy"];
+    const bus  = layoutMap?.[pid]?.["Business"];
+
+    setText("econ_rows", econ?.rows);
+    setText("econ_cols", econ?.cols);
+    setText("bus_rows",  bus?.rows);
+    setText("bus_cols",  bus?.cols);
+  }
+
+  planeSelect.addEventListener("change", updateLayout);
+  document.addEventListener("DOMContentLoaded", updateLayout);
+</script>
