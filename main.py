@@ -263,7 +263,7 @@ def guest_details(flight_id):
     flight_id = flight_id.strip().upper()
 
     # after guest details, continue to the flight page (then seats)
-    next_url = request.args.get("next") or url_for("flight_details", flight_id=flight_id)
+    next_url = request.args.get("next") or request.form.get("next") or url_for("flight_details", flight_id=flight_id)
 
     # used to re-fill the form if there is an error
     form = {"email": "", "full_name": "", "passport_id": "", "phones": []}
@@ -306,19 +306,19 @@ def guest_details(flight_id):
             # IMPORTANT: replace column names to match your table if different
             # This assumes: Guest(guest_email PK, guest_first_name, guest_last_name)
             cur.execute("""
-                INSERT INTO Guest (guest_email, guest_first_name, guest_last_name)
+                INSERT INTO Guest (customer_email, customer_first_name, customer_last_name)
                 VALUES (%s, %s, %s)
                 ON DUPLICATE KEY UPDATE
-                  guest_first_name = VALUES(guest_first_name),
-                  guest_last_name  = VALUES(guest_last_name)
+                  customer_first_name = VALUES(customer_first_name),
+                  customer_last_name  = VALUES(customer_last_name)
             """, (email, first_name, last_name))
 
             # replace phones for that guest
             # This assumes: Guest_phone(guest_email, guest_phone)
-            cur.execute("DELETE FROM Guest_phone WHERE guest_email = %s", (email,))
+            cur.execute("DELETE FROM Guest_phone WHERE customer_email = %s", (email,))
             for ph in phones:
                 cur.execute("""
-                    INSERT INTO Guest_phone (guest_email, guest_phone)
+                    INSERT INTO Guest_phone (customer_email, customer_phone)
                     VALUES (%s, %s)
                 """, (email, ph))
 
@@ -427,12 +427,18 @@ def seats(flight_id):
         return redirect(url_for("flight_details", flight_id=flight_id))
 
     with db_cursor() as cur:
-        # get cabin dimensions + price
         cur.execute("""
-            SELECT rows_num, columns_num, price
-            FROM Cabin_class
-            WHERE flight_id = %s AND class_type = %s
-        """, (flight_id, class_type))
+            SELECT cc.rows_num, cc.columns_num, p.price, f.plane_id
+            FROM Flight f
+            JOIN Cabin_class cc
+              ON cc.plane_id = f.plane_id
+             AND cc.class_type = %s
+            JOIN Flight_Class_Pricing p
+              ON p.flight_id = f.flight_id
+             AND p.plane_id  = f.plane_id
+             AND p.class_type = cc.class_type
+            WHERE f.flight_id = %s
+        """, (class_type, flight_id))
         cabin = cur.fetchone()
         if not cabin:
             flash("Cabin not found for this flight.", "error")
