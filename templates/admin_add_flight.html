@@ -70,7 +70,6 @@
     </div>
   </form>
 </section>
-{% endblock %}
 
 <script>
   const layoutMap = {{ layout_map|tojson }};
@@ -95,3 +94,7 @@
   planeSelect.addEventListener("change", updateLayout);
   document.addEventListener("DOMContentLoaded", updateLayout);
 </script>
+
+{% endblock %}
+
+
