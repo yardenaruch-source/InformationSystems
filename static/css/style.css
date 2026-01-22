@@ -429,6 +429,14 @@ main.container{
 /* =========================
    SEATS (Seats page)
    ========================= */
+.seats-page .card{
+  margin-top: 10px;  /* reduce space from top */
+}
+
+.seats-page .card h2{
+  margin-top: 0;
+}
+
 .seats-wrap{
   overflow: auto;
   margin-top: 12px;
