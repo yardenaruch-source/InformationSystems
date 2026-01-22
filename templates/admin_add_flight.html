@@ -75,27 +75,45 @@
 </section>
 
 <script>
+document.addEventListener("DOMContentLoaded", () => {
   const layoutMap = {{ layout_map|tojson }};
-  const planeSelect = document.querySelector('select[name="plane_id"]');
+  const routeMap  = {{ route_map|tojson }};
 
-  function setText(id, val) {
+  const planeSelect = document.querySelector('select[name="plane_id"]');
+  const routeSelect = document.querySelector('select[name="route_id"]');
+
+  function setVal(id, val) {
     const el = document.getElementById(id);
     if (el) el.value = (val ?? "-");
   }
 
   function updateLayout() {
+    if (!planeSelect) return;
     const pid = planeSelect.value;
     const econ = layoutMap?.[pid]?.["Economy"];
     const bus  = layoutMap?.[pid]?.["Business"];
-
-    setText("econ_rows", econ?.rows);
-    setText("econ_cols", econ?.cols);
-    setText("bus_rows",  bus?.rows);
-    setText("bus_cols",  bus?.cols);
+    setVal("econ_rows", econ?.rows);
+    setVal("econ_cols", econ?.cols);
+    setVal("bus_rows",  bus?.rows);
+    setVal("bus_cols",  bus?.cols);
   }
 
-  planeSelect.addEventListener("change", updateLayout);
-  document.addEventListener("DOMContentLoaded", updateLayout);
+  function updateDuration() {
+    if (!routeSelect) return;
+    const rid = routeSelect.value;     // string
+    setVal("flight_duration", routeMap?.[rid]);
+  }
+
+  if (planeSelect) {
+    planeSelect.addEventListener("change", updateLayout);
+    updateLayout();
+  }
+
+  if (routeSelect) {
+    routeSelect.addEventListener("change", updateDuration);
+    updateDuration();
+  }
+});
 </script>
 
 {% endblock %}
