@@ -5,6 +5,16 @@
 <section class="board narrow-board">
   <h1>Admin Login</h1>
 
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-wrap">
+        {% for category, msg in messages %}
+          <div class="flash flash-{{ category }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
   <form method="post" class="form" style="margin-top:12px;">
     <label class="field-label">Employee ID</label>
     <input class="field-input" type="text" name="employee_id" required>
@@ -16,3 +26,5 @@
   </form>
 </section>
 {% endblock %}
+
+

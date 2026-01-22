@@ -2,20 +2,52 @@
 {% block title %}Add Employee{% endblock %}
 
 {% block content %}
-<h1>Add Employee</h1>
+<section class="board narrow-board">
+  <h1>Add Employee (Manager)</h1>
 
-<p>TODO: decide what “employee” means in your system (Pilot / Flight_attendant / Manager).</p>
+  <form method="post" class="form" style="margin-top:12px;">
 
-<form method="post" class="form">
-  <label class="field-label">Employee ID</label>
-  <input class="field-input" name="employee_id" required>
+    <label class="field-label">Employee ID</label>
+    <input class="field-input" type="text" name="employee_id" maxlength="9"
+           value="{{ form.employee_id }}" required>
 
-  <label class="field-label">First Name</label>
-  <input class="field-input" name="first_name" required>
+    <label class="field-label">First Name (Hebrew)</label>
+    <input class="field-input" type="text" name="first_name"
+           value="{{ form.first_name }}" required>
 
-  <label class="field-label">Last Name</label>
-  <input class="field-input" name="last_name" required>
+    <label class="field-label">Last Name (Hebrew)</label>
+    <input class="field-input" type="text" name="last_name"
+           value="{{ form.last_name }}" required>
 
-  <button class="btn" type="submit">Save</button>
-</form>
+    <label class="field-label">Phone Number</label>
+    <input class="field-input" type="text" name="phone"
+           value="{{ form.phone }}" required>
+
+    <hr style="margin:16px 0; opacity:0.35;">
+
+    <label class="field-label">City</label>
+    <input class="field-input" type="text" name="city"
+           value="{{ form.city }}" required>
+
+    <label class="field-label">Street</label>
+    <input class="field-input" type="text" name="street"
+           value="{{ form.street }}" required>
+
+    <label class="field-label">Street Number</label>
+    <input class="field-input" type="number" name="street_num" min="1"
+           value="{{ form.street_num }}" required>
+
+    <hr style="margin:16px 0; opacity:0.35;">
+
+    <label class="field-label">Employment Date</label>
+    <input class="field-input" type="date" name="employment_date"
+           value="{{ form.employment_date }}" required>
+
+    <label class="field-label">Manager Password (max 8 chars)</label>
+    <input class="field-input" type="password" name="password" maxlength="8"
+           value="{{ form.password }}" required>
+
+    <button class="btn" type="submit" style="margin-top:12px;">Add Employee</button>
+  </form>
+</section>
 {% endblock %}
