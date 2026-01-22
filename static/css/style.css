@@ -10,8 +10,8 @@
   --nav-text: #0b7e86;
   --nav-text-hover: #06686f;
 
-  /* General UI */
-  --card-bg: rgba(17,26,51,0.88);
+  /* General UI
+  --card-bg: rgba(17,26,51,0.88);*/
   --card-border: rgba(255,255,255,0.16);
   --shadow: 0 12px 30px rgba(0,0,0,0.10);
 }
