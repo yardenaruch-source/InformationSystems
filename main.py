@@ -925,6 +925,25 @@ def admin_cancel_flight(flight_id):
             flash("Flight cancelled.", "success")
     return redirect(url_for("admin"))
 
+@app.route("/admin/dashboard")
+def admin_dashboard():
+    if not session.get("admin_employee_id"):
+        return redirect(url_for("admin_login"))
+    return render_template("admin_dashboard.html")
+
+
+@app.route("/admin/employees/add", methods=["GET", "POST"])
+def admin_add_employee():
+    if not session.get("admin_employee_id"):
+        return redirect(url_for("admin_login"))
+
+    if request.method == "POST":
+        # TODO implement insert later
+        flash("Employee added (TODO: implement DB insert).", "success")
+        return redirect(url_for("admin_dashboard"))
+
+    return render_template("admin_add_employee.html")
+
 @app.route("/admin/logout", methods=["POST"])
 def admin_logout():
     session.pop("admin_employee_id", None)

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Add Employee{% endblock %}
+
+{% block content %}
+<h1>Add Employee</h1>
+
+<p>TODO: decide what “employee” means in your system (Pilot / Flight_attendant / Manager).</p>
+
+<form method="post" class="form">
+  <label class="field-label">Employee ID</label>
+  <input class="field-input" name="employee_id" required>
+
+  <label class="field-label">First Name</label>
+  <input class="field-input" name="first_name" required>
+
+  <label class="field-label">Last Name</label>
+  <input class="field-input" name="last_name" required>
+
+  <button class="btn" type="submit">Save</button>
+</form>
+{% endblock %}

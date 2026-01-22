@@ -3,35 +3,6 @@
 
 {% block content %}
 <section class="board admin-box">
-  <h1 style="text-align:center; margin-bottom: 45px;">Admin Dashboard</h1>
-
-  <!-- Stats row -->
-  <div class="admin-stats">
-    <div class="admin-stat">
-      <b>Planes</b>
-      <span class="admin-stat-num">{{ planes_count }}</span>
-    </div>
-
-    <div class="admin-stat">
-      <b>Routes</b>
-      <span class="admin-stat-num">{{ routes_count }}</span>
-    </div>
-
-    <div class="admin-stat">
-      <b>Flights</b>
-      <span class="admin-stat-num">{{ flights_count }}</span>
-    </div>
-  </div>
-
-  <!-- Actions row (centered) -->
-  <div class="admin-actions">
-    <a class="btn" href="{{ url_for('admin_add_plane') }}">+ Add Plane</a>
-    <a class="btn" href="{{ url_for('admin_add_route') }}">+ Add Route</a>
-    <a class="btn" href="{{ url_for('admin_add_flight') }}">+ Add Flight</a>
-  </div>
-</section>
-
-<section class="board admin-box">
   <h1 style="text-align:center;">Flights</h1>
 
   <!-- Filter form (login-like spacing) -->
