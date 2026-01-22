@@ -5,7 +5,9 @@
 <section class="board">
   <h2>Select seats - {{ class_type }} (Flight {{ flight_id }})</h2>
   <p class="muted">Price per seat: ₪{{ cabin.price }}</p>
+</section>
 
+<section>
   <form method="post">
     <input type="hidden" name="class_type" value="{{ class_type }}"/>
 
