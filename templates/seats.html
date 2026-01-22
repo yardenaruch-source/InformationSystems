@@ -2,7 +2,7 @@
 {% block title %}Select Seats{% endblock %}
 
 {% block content %}
-<section class="card">
+<section class="board">
   <h2>Select seats - {{ class_type }} (Flight {{ flight_id }})</h2>
   <p class="muted">Price per seat: ₪{{ cabin.price }}</p>
 
@@ -34,7 +34,7 @@
     </div>
 
     <div class="row" style="margin-top:16px; gap:10px;">
-      <a class="btn btn-outline" href="{{ url_for('flight_details', flight_id=flight_id) }}">Back</a>
+      <a class="btn" href="{{ url_for('flight_details', flight_id=flight_id) }}">Back</a>
       <button class="btn" type="submit">Continue to checkout</button>
     </div>
   </form>
