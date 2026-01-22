@@ -142,6 +142,33 @@ main.container{
   border-radius: 10px;
 }
 
+/* Make admin logout button look like nav links */
+.nav-form {
+  display: inline;
+}
+
+.nav-link {
+  all: unset;
+  cursor: pointer;
+
+  text-decoration: none;
+  color: var(--nav-text);
+  opacity: 0.95;
+
+  font-weight: 450;
+  font-size: 20px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.nav-link:hover {
+  opacity: 1;
+  color: var(--nav-text-hover);
+}
+
+.nav-link.active {
+  font-weight: 700;
+}
 /* =========================
    HOMEPAGE HERO TEXT
    ========================= */
