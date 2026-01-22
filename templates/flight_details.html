@@ -12,7 +12,7 @@
   <h3>Choose cabin class</h3>
   <div class="row" style="gap:12px; flex-wrap:wrap;">
     {% for c in cabins %}
-      <div class="board" style="min-width:240px;">
+      <div>
         <h4>{{ c.class_type }}</h4>
         <p>Price: {{ c.price }} ₪</p>
         <p class="muted">Available seats: {{ c.available }}</p>
