@@ -6,6 +6,13 @@ from urllib.parse import urlparse, urljoin
 app = Flask(__name__)
 app.secret_key = 'the_winning_triplet'
 
+app.permanent_session_lifetime = timedelta(minutes=60)
+@app.before_request
+def refresh_session():
+    if session.get("user_email") or session.get("admin_employee_id"):
+        session.permanent = True
+        session.modified = True
+
 def current_user():
     email = session.get("user_email")
     if not email:
@@ -63,6 +70,8 @@ def login():
         if not user:
             flash("Invalid email or password.", "error")
             return render_template("login.html", next=next_url)
+
+        session.permanent = True
 
         session["user_email"] = user["customer_email"]
         session["just_logged_in_name"] = user["customer_first_name"]
@@ -674,8 +683,37 @@ def cancel_order(order_id):
 
     return redirect(url_for("tickets"))
 
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        employee_id = request.form.get("employee_id", "").strip()
+        password = request.form.get("password", "").strip()
+
+        with db_cursor() as cur:
+            cur.execute("""
+                SELECT employee_id, employee_password
+                FROM Manager
+                WHERE employee_id = %s
+            """, (employee_id,))
+            manager = cur.fetchone()
+
+        if not manager or manager["employee_password"] != password:
+            flash("Wrong employee id or password.", "error")
+            return render_template("admin_login.html")
+
+        session.permanent = True
+
+        session["admin_employee_id"] = manager["employee_id"]
+        flash("Admin login successful!", "success")
+        return redirect(url_for("admin"))
+
+    return render_template("admin_login.html")
+
 @app.route("/admin", methods=["GET"])
 def admin():
+    if not session.get("admin_employee_id"):
+        return redirect(url_for("admin_login"))
+
     flight_id = request.args.get("flight_id", "").strip().upper()
     status = request.args.get("status", "").strip()
     takeoff_date = request.args.get("takeoff_date", "").strip()
@@ -730,6 +768,9 @@ def admin():
 
 @app.route("/admin/add/plane", methods=["GET", "POST"])
 def admin_add_plane():
+    if not session.get("admin_employee_id"):
+        return redirect(url_for("admin_login"))
+
     if request.method == "POST":
         plane_id = request.form.get("plane_id", "").strip().upper()
         plane_size = request.form.get("plane_size", "").strip()
@@ -754,6 +795,9 @@ def admin_add_plane():
 
 @app.route("/admin/add/route", methods=["GET", "POST"])
 def admin_add_route():
+    if not session.get("admin_employee_id"):
+        return redirect(url_for("admin_login"))
+
     if request.method == "POST":
         route_id = request.form.get("route_id", "").strip()
         origin = request.form.get("origin_airport", "").strip().upper()
@@ -778,6 +822,9 @@ def admin_add_route():
 
 @app.route("/admin/add/flights", methods=["GET", "POST"])
 def admin_add_flight():
+    if not session.get("admin_employee_id"):
+        return redirect(url_for("admin_login"))
+
     # GET: show dropdowns for planes/routes/managers
     with db_cursor() as cur:
         cur.execute("SELECT plane_id FROM Plane ORDER BY plane_id")
@@ -862,6 +909,9 @@ def admin_add_flight():
 
 @app.route("/admin/flights/cancel/<flight_id>", methods=["POST"])
 def admin_cancel_flight(flight_id):
+    if not session.get("admin_employee_id"):
+        return redirect(url_for("admin_login"))
+
     flight_id = flight_id.strip().upper()
     with db_cursor() as cur:
         cur.execute("""
@@ -874,6 +924,12 @@ def admin_cancel_flight(flight_id):
         else:
             flash("Flight cancelled.", "success")
     return redirect(url_for("admin"))
+
+@app.route("/admin/logout", methods=["POST"])
+def admin_logout():
+    session.pop("admin_employee_id", None)
+    flash("Logged out.", "success")
+    return redirect(url_for("home"))
 
 @app.route("/ping")
 def ping():
