@@ -691,13 +691,13 @@ def admin_login():
 
         with db_cursor() as cur:
             cur.execute("""
-                SELECT employee_id, employee_password
+                SELECT employee_id, manager_password
                 FROM Manager
                 WHERE employee_id = %s
             """, (employee_id,))
             manager = cur.fetchone()
 
-        if not manager or manager["employee_password"] != password:
+        if not manager or manager["manager_password"] != password:
             flash("Wrong employee id or password.", "error")
             return render_template("admin_login.html")
 
