@@ -244,6 +244,26 @@ main.container{
 /* =========================
    BUTTONS (used for Logout in navbar + anywhere else)
    ========================= */
+.checkbox-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:12px;
+  font-size:15px;
+}
+
+.checkbox-row input[type="checkbox"]{
+  width:18px;
+  height:18px;
+  accent-color:#0d6efd; /* nice blue like modern UI */
+  cursor:pointer;
+}
+
+.checkbox-row label{
+  cursor:pointer;
+}
+
+
 .btn{
   display: inline-flex;
   align-items: center;

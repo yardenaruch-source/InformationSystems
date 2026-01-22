@@ -3,9 +3,25 @@
 
 {% block content %}
 <section class="board narrow-board">
-  <h1>Add Employee (Manager)</h1>
+  <h1>Add Employee</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-wrap">
+        {% for category, msg in messages %}
+          <div class="flash flash-{{ category }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 
   <form method="post" class="form" style="margin-top:12px;">
+
+    <label class="field-label">Job Title</label>
+    <select class="field-input" name="job_title" required>
+      <option value="Pilot" {% if form.job_title == "Pilot" %}selected{% endif %}>Pilot</option>
+      <option value="Flight_attendant" {% if form.job_title == "Flight_attendant" %}selected{% endif %}>Flight Attendant</option>
+    </select>
 
     <label class="field-label">Employee ID</label>
     <input class="field-input" type="text" name="employee_id" maxlength="9"
@@ -43,9 +59,11 @@
     <input class="field-input" type="date" name="employment_date"
            value="{{ form.employment_date }}" required>
 
-    <label class="field-label">Manager Password (max 8 chars)</label>
-    <input class="field-input" type="password" name="password" maxlength="8"
-           value="{{ form.password }}" required>
+    <div class="checkbox-row">
+      <input type="checkbox" id="long_flight_training" name="long_flight_training"
+             {% if form.long_flight_training %}checked{% endif %}>
+      <label for="long_flight_training">Long Flight Training</label>
+    </div>
 
     <button class="btn" type="submit" style="margin-top:12px;">Add Employee</button>
   </form>

@@ -941,7 +941,6 @@ def admin_add_employee():
     if not session.get("admin_employee_id"):
         return redirect(url_for("admin_login"))
 
-    # for re-filling the form after errors
     form = {
         "employee_id": "",
         "first_name": "",
@@ -951,7 +950,8 @@ def admin_add_employee():
         "street": "",
         "street_num": "",
         "employment_date": "",
-        "password": "",
+        "job_title": "Pilot",
+        "long_flight_training": False,
     }
 
     if request.method == "POST":
@@ -963,7 +963,10 @@ def admin_add_employee():
         street = request.form.get("street", "").strip()
         street_num_raw = request.form.get("street_num", "").strip()
         employment_date_raw = request.form.get("employment_date", "").strip()
-        password = request.form.get("password", "").strip()
+        job_title = request.form.get("job_title", "").strip()
+
+        # ✅ Checkbox: if checked it exists, if not checked it's missing
+        long_flight_training = 1 if request.form.get("long_flight_training") else 0
 
         form.update({
             "employee_id": employee_id,
@@ -974,25 +977,22 @@ def admin_add_employee():
             "street": street,
             "street_num": street_num_raw,
             "employment_date": employment_date_raw,
-            "password": password,
+            "job_title": job_title,
+            "long_flight_training": (long_flight_training == 1),
         })
 
-        # required fields
-        if not all([employee_id, first_name, last_name, phone, city, street, street_num_raw, employment_date_raw, password]):
+        if not all([employee_id, first_name, last_name, phone, city, street, street_num_raw, employment_date_raw, job_title]):
             flash("Please fill in all fields.", "error")
             return render_template("admin_add_employee.html", form=form)
 
-        # employee_id must be 9 chars (based on schema VARCHAR(9) and typical ID)
+        if job_title not in ("Pilot", "Flight_attendant"):
+            flash("Please choose a valid job title.", "error")
+            return render_template("admin_add_employee.html", form=form)
+
         if len(employee_id) != 9 or not employee_id.isdigit():
             flash("Employee ID must be exactly 9 digits.", "error")
             return render_template("admin_add_employee.html", form=form)
 
-        # password max 8 (schema VARCHAR(8))
-        if len(password) > 8:
-            flash("Password must be at most 8 characters.", "error")
-            return render_template("admin_add_employee.html", form=form)
-
-        # street num int
         try:
             street_num = int(street_num_raw)
             if street_num <= 0:
@@ -1001,7 +1001,6 @@ def admin_add_employee():
             flash("Street number must be a positive integer.", "error")
             return render_template("admin_add_employee.html", form=form)
 
-        # employment date validation
         try:
             emp_date = datetime.strptime(employment_date_raw, "%Y-%m-%d").date()
         except ValueError:
@@ -1012,42 +1011,56 @@ def admin_add_employee():
             flash("Employment date must be between 1900-01-01 and today.", "error")
             return render_template("admin_add_employee.html", form=form)
 
-        # insert into Manager
         try:
             with db_cursor() as cur:
-                # unique check by employee_id
+                # prevent duplicates in all employee tables
                 cur.execute("SELECT 1 FROM Manager WHERE employee_id = %s", (employee_id,))
                 if cur.fetchone():
-                    flash("That employee ID already exists.", "error")
+                    flash("That employee ID already exists (Manager).", "error")
                     return render_template("admin_add_employee.html", form=form)
 
-                cur.execute("""
-                    INSERT INTO Manager
-                      (employee_id, employee_first_name, employee_last_name,
-                       employee_phone, employee_city, employee_street, employee_street_num,
-                       employment_date, manager_password)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
-                """, (
-                    employee_id,
-                    first_name,
-                    last_name,
-                    phone,
-                    city,
-                    street,
-                    street_num,
-                    emp_date,
-                    password
-                ))
+                cur.execute("SELECT 1 FROM Pilot WHERE employee_id = %s", (employee_id,))
+                if cur.fetchone():
+                    flash("That employee ID already exists (Pilot).", "error")
+                    return render_template("admin_add_employee.html", form=form)
 
-            flash("Employee (Manager) added successfully.", "success")
+                cur.execute("SELECT 1 FROM Flight_attendant WHERE employee_id = %s", (employee_id,))
+                if cur.fetchone():
+                    flash("That employee ID already exists (Flight Attendant).", "error")
+                    return render_template("admin_add_employee.html", form=form)
+
+                if job_title == "Pilot":
+                    cur.execute("""
+                        INSERT INTO Pilot
+                          (employee_id, employee_first_name, employee_last_name,
+                           employee_phone, employee_city, employee_street, employee_street_num,
+                           employment_date, long_flight_training)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    """, (
+                        employee_id, first_name, last_name,
+                        phone, city, street, street_num,
+                        emp_date, long_flight_training
+                    ))
+                else:
+                    cur.execute("""
+                        INSERT INTO Flight_attendant
+                          (employee_id, employee_first_name, employee_last_name,
+                           employee_phone, employee_city, employee_street, employee_street_num,
+                           employment_date, long_flight_training)
+                        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    """, (
+                        employee_id, first_name, last_name,
+                        phone, city, street, street_num,
+                        emp_date, long_flight_training
+                    ))
+
+            flash(f"Employee added successfully ({job_title.replace('_', ' ')}).", "success")
             return redirect(url_for("admin_dashboard"))
 
-        except Exception as e:
-            # optional: print(e) in console, but don't show raw error to users
+        except Exception:
             flash("Failed to add employee. Please try again.", "error")
             return render_template("admin_add_employee.html", form=form)
 
-    # GET
     return render_template("admin_add_employee.html", form=form)
 
 
