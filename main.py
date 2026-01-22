@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from utils import db_cursor
+import mysql.connector
 from datetime import datetime, date, timedelta
 from urllib.parse import urlparse, urljoin
 
@@ -825,7 +826,7 @@ def admin_add_flight():
     if not session.get("admin_employee_id"):
         return redirect(url_for("admin_login"))
 
-    # GET: show dropdowns for planes/routes/managers
+    # GET dropdown data
     with db_cursor() as cur:
         cur.execute("SELECT plane_id FROM Plane ORDER BY plane_id")
         planes = [r["plane_id"] for r in cur.fetchall()]
@@ -852,59 +853,78 @@ def admin_add_flight():
         takeoff_date = request.form.get("takeoff_date", "").strip()
         takeoff_time = request.form.get("takeoff_time", "").strip()
 
-        # optional: auto-create cabin & seats
         econ_price = request.form.get("econ_price", "").strip()
-        bus_price = request.form.get("bus_price", "").strip()
-        econ_rows = request.form.get("econ_rows", "").strip()
-        econ_cols = request.form.get("econ_cols", "").strip()
-        bus_rows = request.form.get("bus_rows", "").strip()
-        bus_cols = request.form.get("bus_cols", "").strip()
+        bus_price  = request.form.get("bus_price", "").strip()
 
         if not all([flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time]):
             flash("Please fill in the required flight fields.", "error")
             return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers)
 
-        with db_cursor() as cur:
-            cur.execute("""
-                INSERT INTO Flight (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time, flight_status)
-                VALUES (%s, %s, %s, %s, %s, %s, 'Scheduled')
-            """, (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time))
-
-            # If cabin fields provided, try to create cabin classes + seats
-            auto_ok = all([econ_price, bus_price, econ_rows, econ_cols, bus_rows, bus_cols])
-            if auto_ok:
-                # NOTE: This assumes your Cabin_class is per-flight (recommended).
-                # If your DB is still (plane_id, class_type) PK, this will need adjustment.
+        # require prices (per your requirement)
+        if not econ_price or not bus_price:
+            flash("Please enter Economy and Business prices.", "error")
+            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers)
+        try:
+            with db_cursor() as cur:
+                # 1) Get layout from Cabin_class for the selected plane
                 cur.execute("""
-                    INSERT INTO Cabin_class (flight_id, class_type, plane_id, columns_num, rows_num, price)
-                    VALUES (%s, 'Economy', %s, %s, %s, %s)
-                """, (flight_id, plane_id, int(econ_cols), int(econ_rows), float(econ_price)))
+                    SELECT class_type, rows_num, columns_num
+                    FROM Cabin_class
+                    WHERE plane_id = %s
+                """, (plane_id,))
+                cabins = cur.fetchall()
+
+                layout = {x["class_type"]: (int(x["rows_num"]), int(x["columns_num"])) for x in cabins}
+
+                if "Economy" not in layout or "Business" not in layout:
+                    flash("This plane is missing cabin layout (Economy/Business) in Cabin_class.", "error")
+                    return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers)
+
+                econ_rows, econ_cols = layout["Economy"]
+                bus_rows, bus_cols = layout["Business"]
+
+                # 2) Insert Flight
+                cur.execute("""
+                    INSERT INTO Flight (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time, flight_status)
+                    VALUES (%s, %s, %s, %s, %s, %s, 'Scheduled')
+                """, (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time))
+
+                # 3) Insert prices into Flight_Class_Pricing
+                cur.execute("""
+                    INSERT INTO Flight_Class_Pricing (flight_id, plane_id, class_type, price)
+                    VALUES (%s, %s, 'Economy', %s)
+                """, (flight_id, plane_id, float(econ_price)))
 
                 cur.execute("""
-                    INSERT INTO Cabin_class (flight_id, class_type, plane_id, columns_num, rows_num, price)
-                    VALUES (%s, 'Business', %s, %s, %s, %s)
-                """, (flight_id, plane_id, int(bus_cols), int(bus_rows), float(bus_price)))
+                    INSERT INTO Flight_Class_Pricing (flight_id, plane_id, class_type, price)
+                    VALUES (%s, %s, 'Business', %s)
+                """, (flight_id, plane_id, float(bus_price)))
 
-                # Seats: Economy
-                for r in range(1, int(econ_rows) + 1):
-                    for c in range(1, int(econ_cols) + 1):
+                # 4) Insert seats (include plane_id because FK)
+                for r in range(1, econ_rows + 1):
+                    for c in range(1, econ_cols + 1):
                         cur.execute("""
-                            INSERT INTO Seat (flight_id, class_type, s_row, s_column, order_id)
-                            VALUES (%s, 'Economy', %s, %s, NULL)
-                        """, (flight_id, r, c))
+                            INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
+                            VALUES (%s, %s, %s, %s, 'Economy', NULL)
+                        """, (flight_id, r, c, plane_id))
 
-                # Seats: Business
-                for r in range(1, int(bus_rows) + 1):
-                    for c in range(1, int(bus_cols) + 1):
+                for r in range(1, bus_rows + 1):
+                    for c in range(1, bus_cols + 1):
                         cur.execute("""
-                            INSERT INTO Seat (flight_id, class_type, s_row, s_column, order_id)
-                            VALUES (%s, 'Business', %s, %s, NULL)
-                        """, (flight_id, r, c))
+                            INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
+                            VALUES (%s, %s, %s, %s, 'Business', NULL)
+                        """, (flight_id, r, c, plane_id))
+
+        except mysql.connector.Error as e:
+            flash(f"Database error: {e.msg}", "error")
+            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers)
+
 
         flash("Flight created successfully.", "success")
         return redirect(url_for("admin"))
 
     return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers)
+
 
 
 @app.route("/admin/flights/cancel/<flight_id>", methods=["POST"])

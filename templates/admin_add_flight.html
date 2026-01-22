@@ -6,7 +6,6 @@
   <h2 style="text-align: center;">Add Flight</h2>
 
   <form method="post" class="form" style="margin-top:12px; max-width:720px;">
-    <h3>Flight Details</h3>
 
     <label class="field-label">Flight ID</label>
     <input class="field-input" name="flight_id" placeholder="e.g. F1234" required>
@@ -40,36 +39,21 @@
 
     <hr style="margin:18px 0; opacity:0.35;">
 
-    <h3>Optional: Auto-create cabin classes + seats</h3>
-    <p class="muted">Fill all fields below to generate cabins + seats automatically.</p>
-
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
       <div class="card" style="padding:12px;">
         <b>Economy</b>
         <label class="field-label">Price</label>
         <input class="field-input" type="number" step="0.01" min="0" name="econ_price" placeholder="e.g. 399.00">
-
-        <label class="field-label">Rows</label>
-        <input class="field-input" type="number" min="1" name="econ_rows" placeholder="e.g. 20">
-
-        <label class="field-label">Columns</label>
-        <input class="field-input" type="number" min="1" name="econ_cols" placeholder="e.g. 6">
       </div>
 
       <div class="card" style="padding:12px;">
         <b>Business</b>
         <label class="field-label">Price</label>
         <input class="field-input" type="number" step="0.01" min="0" name="bus_price" placeholder="e.g. 999.00">
-
-        <label class="field-label">Rows</label>
-        <input class="field-input" type="number" min="1" name="bus_rows" placeholder="e.g. 8">
-
-        <label class="field-label">Columns</label>
-        <input class="field-input" type="number" min="1" name="bus_cols" placeholder="e.g. 4">
       </div>
     </div>
 
-    <div style="text-align: center; display:flex; gap:10px; margin-top:14px;">
+    <div style="justify-content:center;; display:flex; gap:10px; margin-top:14px;">
       <button class="btn" type="submit">Create Flight</button>
     </div>
   </form>
