@@ -17,6 +17,9 @@
       {% endfor %}
     </select>
 
+    <label class="field-label">Flight Duration (minutes)</label>
+    <input class="field-input" id="flight_duration" type="text" readonly>
+
     <label class="field-label">Plane</label>
     <select class="field-input" name="plane_id" required>
       {% for p in planes %}
