@@ -12,11 +12,12 @@
 
     <p class="muted" style="margin-bottom: 1px; font-size: 17px; gap: 10px;" >
       Not a member?
-      <a class="btn" style="margin-top: 12px;" href="{{ url_for('register', next=url_for('login', flight_id=flight_id)) }}">
+      <a class="btn" style="margin-top: 12px;" href="{{ url_for('register', next=url_for('flight_details', flight_id=flight_id)) }}">
         Register
       </a>
 
-      <a class="btn" style="margin-top: 5px;" href="{{ url_for('guest_details', flight_id=flight_id) }}">
+      <a class="btn" style="margin-top: 5px;"
+         href="{{ url_for('guest_details', flight_id=flight_id, next=url_for('flight_details', flight_id=flight_id)) }}">
         Continue as guest
       </a>
     </p>
