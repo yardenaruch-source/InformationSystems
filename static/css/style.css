@@ -257,6 +257,7 @@ main.container{
   padding: 22px;
   box-shadow: 0 14px 30px rgba(0,0,0,0.18);
   color: #111;
+  margin: 15px auto;
 }
 
 /* Optional narrower board (your login uses board + narrow-board) */
