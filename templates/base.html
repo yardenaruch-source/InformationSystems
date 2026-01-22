@@ -15,40 +15,65 @@
               <img src="{{ url_for('static', filename='img/logo1.png') }}" alt="FLYTAU Logo" class="nav-logo">
             </a>
             <nav class="nav">
-                <a href="{{ url_for('home') }}"
-                   class="{% if request.endpoint =='home' %}active{% endif %}">
-                    Home
-                </a>
 
-                <a href="{{ url_for('book') }}"
-                    class="{% if request.endpoint in ['book', 'booking_log', 'guest_details'] %}active{% endif %}">
-                    Book a flight
-                </a>
+                {% if session.get("admin_employee_id") %}
+                    <!-- ADMIN NAV -->
+                    <a href="{{ url_for('admin') }}"
+                       class="{% if request.endpoint == 'admin' %}active{% endif %}">
+                        Flights
+                    </a>
 
-                <a href="{{ url_for('tickets') }}"
-                    class="{% if request.endpoint == 'tickets' %}active{% endif %}">
-                    My Tickets
-                </a>
+                    <a href="{{ url_for('admin_dashboard') }}"
+                       class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+                        Dashboard
+                    </a>
 
-                {% if session.get("user_email") %}
-                  <span class="nav-user">Logged in: {{ session.get("user_email") }}</span>
+                    <a href="{{ url_for('admin_add_employee') }}"
+                       class="{% if request.endpoint == 'admin_add_employee' %}active{% endif %}">
+                        Add Employee
+                    </a>
 
-                  <a class="{% if request.endpoint == 'logout' %}active{% endif %}"
-                    href="{{ url_for('logout') }}">
-                    Logout
-                  </a>
+                    <form action="{{ url_for('admin_logout') }}" method="post" style="display:inline;">
+                        <button type="submit" class="nav-btn {% if request.endpoint == 'admin_logout' %}active{% endif %}">
+                            Logout
+                        </button>
+                    </form>
 
                 {% else %}
-                  <a href="{{ url_for('login') }}"
-                     class="{% if request.endpoint == 'login' %}active{% endif %}">
-                      Login
-                  </a>
-                {% endif %}
+                    <a href="{{ url_for('home') }}"
+                       class="{% if request.endpoint =='home' %}active{% endif %}">
+                        Home
+                    </a>
 
-                <a href="{{ url_for('admin') }}"
-                    class="nav-right {% if request.endpoint in ['admin','admin_add_plane','admin_add_route','admin_add_flight'] %}active{% endif %}">
-                    Admin
-                </a>
+                    <a href="{{ url_for('book') }}"
+                        class="{% if request.endpoint in ['book', 'booking_log', 'guest_details'] %}active{% endif %}">
+                        Book a flight
+                    </a>
+
+                    <a href="{{ url_for('tickets') }}"
+                        class="{% if request.endpoint == 'tickets' %}active{% endif %}">
+                        My Tickets
+                    </a>
+
+                    {% if session.get("user_email") %}
+                      <span class="nav-user">Logged in: {{ session.get("user_email") }}</span>
+
+                      <a class="{% if request.endpoint == 'logout' %}active{% endif %}"
+                        href="{{ url_for('logout') }}">
+                        Logout
+                      </a>
+
+                    {% else %}
+                      <a href="{{ url_for('login') }}"
+                         class="{% if request.endpoint == 'login' %}active{% endif %}">
+                          Login
+                      </a>
+                    {% endif %}
+
+                    <a href="{{ url_for('admin_login') }}"
+                        class="nav-right {% if request.endpoint in ['admin_login'] %}active{% endif %}">
+                        Admin
+                    </a>
             </nav>
         </div>
     </header>
