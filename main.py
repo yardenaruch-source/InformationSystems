@@ -779,7 +779,7 @@ def admin_add_plane():
 
         if not all([plane_id, plane_size, plane_manufacturer, purchase_date]):
             flash("Please fill in all fields.", "error")
-            return render_template("admin_plane_new.html")
+            return render_template("admin_add_plane.html")
 
         with db_cursor() as cur:
             cur.execute("""
@@ -790,7 +790,7 @@ def admin_add_plane():
         flash("Plane added successfully.", "success")
         return redirect(url_for("admin"))
 
-    return render_template("admin_plane_new.html")
+    return render_template("admin_add_plane.html")
 
 
 @app.route("/admin/add/route", methods=["GET", "POST"])
@@ -806,7 +806,7 @@ def admin_add_route():
 
         if not all([route_id, origin, dest, duration]):
             flash("Please fill in all fields.", "error")
-            return render_template("admin_route_new.html")
+            return render_template("admin_add_route.html")
 
         with db_cursor() as cur:
             cur.execute("""
@@ -817,7 +817,7 @@ def admin_add_route():
         flash("Route added successfully.", "success")
         return redirect(url_for("admin"))
 
-    return render_template("admin_route_new.html")
+    return render_template("admin_add_route.html")
 
 
 @app.route("/admin/add/flights", methods=["GET", "POST"])
@@ -862,7 +862,7 @@ def admin_add_flight():
 
         if not all([flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time]):
             flash("Please fill in the required flight fields.", "error")
-            return render_template("admin_flight_new.html", planes=planes, routes=routes, managers=managers)
+            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers)
 
         with db_cursor() as cur:
             cur.execute("""
@@ -904,7 +904,7 @@ def admin_add_flight():
         flash("Flight created successfully.", "success")
         return redirect(url_for("admin"))
 
-    return render_template("admin_flight_new.html", planes=planes, routes=routes, managers=managers)
+    return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers)
 
 
 @app.route("/admin/flights/cancel/<flight_id>", methods=["POST"])
