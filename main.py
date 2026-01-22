@@ -301,27 +301,6 @@ def guest_details(flight_id):
         first_name = parts[0]
         last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
 
-        # Save ONLY: email + first_name + last_name + phones (NOT passport)
-        with db_cursor() as cur:
-            # IMPORTANT: replace column names to match your table if different
-            # This assumes: Guest(guest_email PK, guest_first_name, guest_last_name)
-            cur.execute("""
-                INSERT INTO Guest (customer_email, customer_first_name, customer_last_name)
-                VALUES (%s, %s, %s)
-                ON DUPLICATE KEY UPDATE
-                  customer_first_name = VALUES(customer_first_name),
-                  customer_last_name  = VALUES(customer_last_name)
-            """, (email, first_name, last_name))
-
-            # replace phones for that guest
-            # This assumes: Guest_phone(guest_email, guest_phone)
-            cur.execute("DELETE FROM Guest_phone WHERE customer_email = %s", (email,))
-            for ph in phones:
-                cur.execute("""
-                    INSERT INTO Guest_phone (customer_email, customer_phone)
-                    VALUES (%s, %s)
-                """, (email, ph))
-
         # keep guest info in session so seats() can use it
         session["guest"] = {
             "email": email,
@@ -516,9 +495,9 @@ def seats(flight_id):
 
 @app.route("/checkout/<order_id>", methods=["GET", "POST"])
 def checkout(order_id):
-    cleanup_expired_pending_orders()
-
     if request.method == "POST":
+        cleanup_expired_pending_orders()
+
         with db_cursor() as cur:
             cur.execute("""
                 UPDATE Orders
@@ -530,6 +509,43 @@ def checkout(order_id):
             if cur.rowcount != 1:
                 flash("This reservation expired or was already confirmed. Please book again.", "error")
                 return redirect(url_for("book"))
+
+            # ✅ If this order is for a guest, save guest details NOW (after payment)
+            cur.execute("SELECT guest_email FROM Orders WHERE order_id = %s", (order_id,))
+            row = cur.fetchone()
+            guest_email = (row or {}).get("guest_email")
+
+            if guest_email:
+                guest = session.get("guest")
+
+                # If session is missing guest info, you can decide what to do:
+                # either block the purchase, or save only guest_email.
+                if not guest or guest.get("email") != guest_email:
+                    flash("Guest details missing. Please continue as guest again.", "error")
+                    return redirect(url_for("booking_log", flight_id=row.get("flight_id")))
+
+                first_name = guest.get("first_name", "")
+                last_name = guest.get("last_name", "")
+                phones = guest.get("phones", [])
+
+                # IMPORTANT: change table/column names to match your DB schema
+                cur.execute("""
+                    INSERT INTO Guest (customer_email, customer_first_name, customer_last_name)
+                    VALUES (%s, %s, %s)
+                    ON DUPLICATE KEY UPDATE
+                      customer_first_name = VALUES(customer_first_name),
+                      customer_last_name  = VALUES(customer_last_name)
+                """, (guest_email, first_name, last_name))
+
+                cur.execute("DELETE FROM Guest_phone WHERE customer_email = %s", (guest_email,))
+                for ph in phones:
+                    cur.execute("""
+                        INSERT INTO Guest_phone (customer_email, customer_phone)
+                        VALUES (%s, %s)
+                    """, (guest_email, ph))
+
+                # optional: cleanup so it won't leak to next order
+                session.pop("guest", None)
 
         flash("Payment confirmed. Order is now active!", "success")
         return redirect(url_for("checkout", order_id=order_id))
