@@ -5,13 +5,13 @@
 <section class="board narrow-board" style="text-align:center;">
   <h2>Flight {{ flight.flight_id }}</h2>
   <p class="muted" style="line-height: 1.8; font-size: 17px;">
-    {{ flight.origin_airport }} → {{ flight.destination_airport }} |<br>
+    {{ flight.origin_airport }} → {{ flight.destination_airport }}<br>
     {{ flight.takeoff_date }} at {{ flight.takeoff_time }}
   </p>
 </section>
 
 <section class="board narrow-board" style="text-align:center;">
-  <h3 style="font-size: 17px;">Choose cabin class</h3>
+  <h3 style="font-size: 20px;">Choose cabin class</h3>
   <div class="row" style="gap:12px; flex-wrap:wrap;">
     {% for c in cabins %}
       <div>
