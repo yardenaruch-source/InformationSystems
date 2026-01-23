@@ -474,57 +474,155 @@ main.container{
   font-weight: 700;
 }
 
-/* ===== Seats page tweaks ===== */
+/* =========================
+   SEATS (Seats page)
+   ========================= */
+
 :root{
   --aisle: 28px;
   --seat: 44px;
 }
 
-/* Wrap header + map to the same width (auto-fit to seat map) */
-.seats-page .seats-shell{
-  width: fit-content;
-  max-width: 100%;
-  margin: 0 auto;
+/* ---- Page layout (left info + right seat map) ---- */
+.seats-page .seats-layout{
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 24px;
+  align-items: start;
+  max-width: 1100px;
+  margin: 20px auto;
+  padding: 0 18px;
 }
 
-/* Header box should match seat map width */
-.seats-page .seats-header{
+@media (max-width: 900px){
+  .seats-page .seats-layout{
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Left column */
+.seats-page .seats-side{
+  display: grid;
+  gap: 18px;
+}
+
+/* Right column */
+.seats-page .seats-main{
+  display: grid;
+  gap: 14px;
+  justify-items: center; /* center map + buttons */
+}
+
+/* ---- Header / summary / legend boxes ---- */
+.seats-page .seats-header,
+.seats-page .seats-summary,
+.seats-page .seats-legend{
   width: 100%;
   text-align: center;
-  margin: 10px 0 14px;
 }
 
-/* Title/subtitle colors without inline styles */
-.seats-page .seats-title,
-.seats-page .seats-subtitle{
+.seats-page .seats-title{
+  margin: 0;
   color: #051c2e;
 }
 
-/* Buttons row (centered) */
-.seats-page .seats-actions{
-  margin-top: 16px;
-  display: flex;
-  gap: 10px;
-  justify-content: center;
+.seats-page .seats-subtitle{
+  margin-top: 8px;
+  color: #051c2e;
 }
 
-/* Container (wraps tightly around seat map) */
+.seats-page .seats-box-title{
+  margin: 0 0 14px;
+  color: #051c2e;
+  font-weight: 800;
+}
+
+/* ---- Summary box (Selected seats + total) ---- */
+.seats-page .summary-row{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  text-align: left;
+}
+
+.seats-page .summary-row:first-of-type{
+  border-top: none;
+}
+
+.seats-page .summary-label{
+  color: rgba(0,0,0,0.6);
+  font-weight: 700;
+}
+
+.seats-page .summary-value{
+  font-weight: 800;
+  color: #051c2e;
+  text-align: right;
+  overflow-wrap: anywhere; /* long seat lists won't break layout */
+}
+
+.seats-page .summary-total{
+  margin-top: 6px;
+  padding-top: 14px;
+}
+
+/* ---- Legend box ---- */
+.seats-page .legend-item{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  margin: 10px 0;
+  color: #051c2e;
+  font-weight: 700;
+}
+
+.seats-page .legend-swatch{
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+}
+
+/* Available swatch */
+.seats-page .legend-available{
+  background: rgba(255,255,255,0.98);
+  border: 2px solid var(--nav-text);
+}
+
+/* Selected swatch */
+.seats-page .legend-selected{
+  background: #9ed3d0;
+  border: 2px solid rgba(0,0,0,0.35);
+}
+
+/* Taken swatch */
+.seats-page .legend-taken{
+  background: rgba(0,0,0,0.06);
+  border: 2px dashed rgba(0,0,0,0.25);
+  color: rgba(0,0,0,0.45);
+}
+
+/* ---- Seat map container (tight fit) ---- */
 .seats-page .seats-wrap{
   width: fit-content;
   max-width: 100%;
-  margin: 12px auto 0;
+  margin: 0 auto;
   padding: 18px 22px;
   overflow: auto;
   border-radius: 12px;
   background: rgba(255,255,255,0.7);
 }
 
-/* Seat map (rows stacked vertically) */
 .seats-page .seats-map{
   display: grid;
   gap: 12px;
-  position: relative;
-} /* ✅ close the block */
+}
 
 /* One airplane row */
 .seat-row{
@@ -540,18 +638,26 @@ main.container{
   justify-content: center;
 }
 
-/* Aisle rules */
+/* ---- Aisle rules ---- */
+/* 4 columns: 2 | aisle | 2 */
 .seats-map.cols-4 .seat-row{ grid-template-columns: repeat(4, max-content); }
 .seats-map.cols-4 .seat-cell:nth-child(2){ margin-right: var(--aisle); }
 
+/* 6 columns: 3 | aisle | 3 */
 .seats-map.cols-6 .seat-row{ grid-template-columns: repeat(6, max-content); }
 .seats-map.cols-6 .seat-cell:nth-child(3){ margin-right: var(--aisle); }
 
+/* 9 columns: 3 | aisle | 3 | aisle | 3 */
 .seats-map.cols-9 .seat-row{ grid-template-columns: repeat(9, max-content); }
 .seats-map.cols-9 .seat-cell:nth-child(3),
 .seats-map.cols-9 .seat-cell:nth-child(6){ margin-right: var(--aisle); }
 
-/* Seat tiles */
+/* If you ever use other column counts */
+.seats-map.cols-generic .seat-row{
+  grid-template-columns: repeat(var(--cols, 6), max-content);
+}
+
+/* ---- Seat tiles ---- */
 .seat-tile{
   display: inline-flex;
   align-items: center;
@@ -586,6 +692,7 @@ main.container{
   border-color: rgba(0,0,0,0.35);
 }
 
+/* Taken seats */
 .seat-taken{
   display: inline-flex;
   align-items: center;
@@ -599,6 +706,12 @@ main.container{
   font-weight: 900;
 }
 
+/* Buttons under the map */
+.seats-page .seats-actions{
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
 
 /* =========================
    RESPONSIVE
