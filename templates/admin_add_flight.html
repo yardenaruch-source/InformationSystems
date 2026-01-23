@@ -27,12 +27,13 @@
       {% endfor %}
     </select>
 
-    <label class="field-label">Manager</label>
-    <select class="field-input" name="manager_id" required>
-      {% for m in managers %}
-        <option value="{{ m.employee_id }}">{{ m.employee_id }} — {{ m.employee_first_name }} {{ m.employee_last_name }}</option>
-      {% endfor %}
-    </select>
+    <label>Manager</label>
+
+    <div class="field-readonly">
+      {{ logged_admin.employee_first_name }} {{ logged_admin.employee_last_name }} — {{ logged_admin.employee_id }}
+    </div>
+
+    <input type="hidden" name="manager_id" value="{{ logged_admin.employee_id }}">
 
     <label class="field-label">Takeoff Date</label>
     <input class="field-input" type="date" name="takeoff_date" required>

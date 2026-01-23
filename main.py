@@ -828,12 +828,19 @@ def admin_add_flight():
         """)
         routes = cur.fetchall()
 
+        # ✅ ADD HERE: fetch the logged-in admin details (from session)
+        admin_id = session.get("admin_employee_id")
         cur.execute("""
             SELECT employee_id, employee_first_name, employee_last_name
             FROM Manager
-            ORDER BY employee_id
-        """)
-        managers = cur.fetchall()
+            WHERE employee_id = %s
+        """, (admin_id,))
+        logged_admin = cur.fetchone()
+
+        if not logged_admin:
+            flash("Admin user not found. Please login again.", "error")
+            session.pop("admin_employee_id", None)
+            return redirect(url_for("admin_login"))
 
         # ✅ add this:
         cur.execute("""
@@ -857,7 +864,7 @@ def admin_add_flight():
         flight_id = request.form.get("flight_id", "").strip().upper()
         route_id = request.form.get("route_id", "").strip()
         plane_id = request.form.get("plane_id", "").strip().upper()
-        manager_id = request.form.get("manager_id", "").strip()
+        manager_id = session.get("admin_employee_id")
         takeoff_date = request.form.get("takeoff_date", "").strip()
         takeoff_time = request.form.get("takeoff_time", "").strip()
 
@@ -866,12 +873,12 @@ def admin_add_flight():
 
         if not all([flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time]):
             flash("Please fill in the required flight fields.", "error")
-            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map, route_map=route_map)
+            return render_template( "admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map, route_map=route_map, logged_admin=logged_admin)
 
         # require prices (per your requirement)
         if not econ_price or not bus_price:
             flash("Please enter Economy and Business prices.", "error")
-            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map, route_map=route_map)
+            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map, route_map=route_map, logged_admin=logged_admin)
 
         try:
             with db_cursor() as cur:
@@ -887,7 +894,7 @@ def admin_add_flight():
 
                 if "Economy" not in layout or "Business" not in layout:
                     flash("This plane is missing cabin layout (Economy/Business) in Cabin_class.", "error")
-                    return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map, route_map=route_map)
+                    return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map, route_map=route_map, logged_admin=logged_admin)
 
                 econ_rows, econ_cols = layout["Economy"]
                 bus_rows, bus_cols = layout["Business"]
@@ -926,13 +933,13 @@ def admin_add_flight():
 
         except mysql.connector.Error as e:
             flash(f"Database error: {e.msg}", "error")
-            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map, route_map=route_map)
+            return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map, route_map=route_map, logged_admin=logged_admin)
 
 
         flash("Flight created successfully.", "success")
         return redirect(url_for("admin_flights"))
 
-    return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map, route_map=route_map)
+    return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map, route_map=route_map, logged_admin=logged_admin)
 
 @app.route("/admin/flights/cancel/<flight_id>", methods=["POST"])
 def admin_cancel_flight(flight_id):
