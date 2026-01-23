@@ -498,6 +498,7 @@ main.container{
   display: grid;
   gap: 12px;
   position: relative;
+} /* ✅ close the block */
 
 /* One airplane row */
 .seat-row{
