@@ -94,10 +94,11 @@ main.container{
 .nav{
   display: flex;
   align-items: center;
-  gap: 26px;           /* spacing between buttons */
+  gap: 22px;           /* spacing between buttons */
   flex-wrap: nowrap;
   margin-left: 10px;   /* pushes links a bit away from logo */
   width: 100%;
+  white-space: nowrap;
 }
 
 .nav-right{
