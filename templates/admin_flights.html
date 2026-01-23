@@ -55,7 +55,7 @@
           <td>{{ f.plane_id }}</td>
           <td>{{ f.manager_id }}</td>
           <td>
-            {% if f.flight_status != 'Cancelled' %}
+            {% if f.flight_status != 'Cancelled' or f.flight_status != 'Completed' %}
               <form method="post"
                     action="{{ url_for('admin_cancel_flight', flight_id=f.flight_id) }}"
                     onsubmit="return confirm('Cancel flight {{ f.flight_id }}?');">

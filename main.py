@@ -932,24 +932,31 @@ def admin_add_flight():
 
     return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map, route_map=route_map)
 
-
-
 @app.route("/admin/flights/cancel/<flight_id>", methods=["POST"])
 def admin_cancel_flight(flight_id):
     if not session.get("admin_employee_id"):
         return redirect(url_for("admin_login"))
 
     flight_id = flight_id.strip().upper()
+
     with db_cursor() as cur:
+        cur.execute("SELECT flight_status FROM Flight WHERE flight_id = %s", (flight_id,))
+        row = cur.fetchone()
+        if not row:
+            flash("Flight not found.", "error")
+            return redirect(url_for("admin_flights"))
+
+        if row["flight_status"] not in ("Scheduled", "Full"):
+            flash("Only Scheduled/Full flights can be cancelled.", "error")
+            return redirect(url_for("admin_flights"))
+
         cur.execute("""
             UPDATE Flight
             SET flight_status = 'Cancelled'
             WHERE flight_id = %s
         """, (flight_id,))
-        if cur.rowcount != 1:
-            flash("Flight not found.", "error")
-        else:
-            flash("Flight cancelled.", "success")
+        flash("Flight cancelled.", "success")
+
     return redirect(url_for("admin_flights"))
 
 @app.route("/admin/dashboard")
