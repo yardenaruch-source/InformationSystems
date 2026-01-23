@@ -15,7 +15,7 @@
     <div class="seats-wrap">
 
       {# set layout mode by number of columns #}
-      {% set cols = cabin.columns_num % | int %}
+      {% set cols = cabin.columns_num | int %}
       {% if cols == 4 %}
         {% set layout = "cols-4" %}
       {% elif cols == 6 %}
