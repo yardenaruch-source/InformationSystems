@@ -13,28 +13,43 @@
     <input type="hidden" name="class_type" value="{{ class_type }}"/>
 
     <div class="seats-wrap">
-      <table class="board-table">
-        <tbody>
-          {% for r in range(1, cabin.rows_num + 1) %}
-          <tr>
+
+      {# set layout mode by number of columns #}
+      {% set cols = cabin.columns_num %}
+      {% if cols == 4 %}
+        {% set layout = "cols-4" %}
+      {% elif cols == 6 %}
+        {% set layout = "cols-6" %}
+      {% elif cols == 9 %}
+        {% set layout = "cols-9" %}
+      {% else %}
+        {% set layout = "cols-generic" %}
+      {% endif %}
+
+      <div class="seats-map {{ layout }}">
+        {% for r in range(1, cabin.rows_num + 1) %}
+          <div class="seat-row">
             {% for c in range(1, cabin.columns_num + 1) %}
               {% set is_taken = taken.get((r,c), False) %}
-              <td style="text-align:center;">
+
+              <div class="seat-cell">
                 {% if is_taken %}
                   <span class="seat-taken">X</span>
                 {% else %}
-                    <label class="seat-tile">
-                      <input type="checkbox" name="seat" value="{{ r }}-{{ c }}">
-                      <span>{{ r }}{{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[c-1] if c <= 26 else c }}</span>
-                    </label>
+                  <label class="seat-tile">
+                    <input type="checkbox" name="seat" value="{{ r }}-{{ c }}">
+                    <span>{{ r }}{{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[c-1] if c <= 26 else c }}</span>
+                  </label>
                 {% endif %}
-              </td>
+              </div>
+
             {% endfor %}
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </div>
+        {% endfor %}
+      </div>
+
     </div>
+
 
     <div class="row" style="margin-top:16px; gap:10px;">
       <a class="btn" href="{{ url_for('flight_details', flight_id=flight_id) }}">Back</a>

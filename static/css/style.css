@@ -547,6 +547,58 @@ main.container{
   font-weight: 900;
 }
 
+/* ===== Seats map layout (airline-style) ===== */
+
+.seats-map{
+  display: grid;
+  gap: 12px;            /* vertical spacing between rows */
+  padding: 14px 10px;
+}
+
+/* one row of seats */
+.seat-row{
+  display: grid;
+  justify-content: center;
+  align-items: center;
+  column-gap: 10px;     /* normal gap between adjacent seats */
+}
+
+/* wrapper so taken seats + available seats align same */
+.seat-cell{
+  display: flex;
+  justify-content: center;
+}
+
+/* ---- 4 seats: 2 | aisle | 2 ---- */
+.seats-map.cols-4 .seat-row{
+  grid-template-columns: repeat(4, max-content);
+}
+.seats-map.cols-4 .seat-cell:nth-child(2){
+  margin-right: 28px; /* aisle gap */
+}
+
+/* ---- 6 seats: 3 | aisle | 3 ---- */
+.seats-map.cols-6 .seat-row{
+  grid-template-columns: repeat(6, max-content);
+}
+.seats-map.cols-6 .seat-cell:nth-child(3){
+  margin-right: 28px; /* aisle gap */
+}
+
+/* ---- 9 seats: 3 | aisle | 3 | aisle | 3 ---- */
+.seats-map.cols-9 .seat-row{
+  grid-template-columns: repeat(9, max-content);
+}
+.seats-map.cols-9 .seat-cell:nth-child(3),
+.seats-map.cols-9 .seat-cell:nth-child(6){
+  margin-right: 28px; /* aisle gaps */
+}
+
+/* Fallback: no special aisles */
+.seats-map.cols-generic .seat-row{
+  grid-template-columns: repeat(var(--cols, 6), max-content);
+}
+
 /* =========================
    RESPONSIVE
    ========================= */
