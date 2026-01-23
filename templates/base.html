@@ -75,10 +75,10 @@
                       </a>
                     {% endif %}
 
-                    <a href="{{ url_for('admin_login') }}"
-                        class="nav-right {% if request.endpoint in ['admin_login'] %}active{% endif %}">
-                        Admin
-                    </a>
+                      <a href="{{ url_for('go_admin') }}"
+                          class="nav-right {% if request.endpoint in ['admin_login', 'go_admin'] %}active{% endif %}">
+                          Admin
+                      </a>
                 {% endif %}
 
             </nav>

@@ -867,6 +867,17 @@ def admin_login():
 
     return render_template("admin_login.html")
 
+@app.route("/go-admin")
+def go_admin():
+    # If customer is logged in → block admin
+    if session.get("user_email"):
+        flash("Please logout of the customer account.", "error")
+        return redirect(url_for("home"))  # or redirect(request.referrer or url_for("home"))
+
+    # Otherwise allow admin login page
+    return redirect(url_for("admin_login"))
+
+
 @app.route("/admin/flights", methods=["GET"])
 def admin_flights():
     if not session.get("admin_employee_id"):
