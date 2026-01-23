@@ -706,12 +706,12 @@ def admin_login():
 
         session["admin_employee_id"] = manager["employee_id"]
         flash("Admin login successful!", "success")
-        return redirect(url_for("admin"))
+        return redirect(url_for("admin_flights"))
 
     return render_template("admin_login.html")
 
-@app.route("/admin", methods=["GET"])
-def admin():
+@app.route("/admin/flights", methods=["GET"])
+def admin_flights():
     if not session.get("admin_employee_id"):
         return redirect(url_for("admin_login"))
 
@@ -749,7 +749,7 @@ def admin():
         flights = cur.fetchall()
 
     return render_template(
-        "admin.html",
+        "admin_flights.html",
         flights=flights,
         filters={"flight_id": flight_id, "status": status, "takeoff_date": takeoff_date},
     )
@@ -777,7 +777,7 @@ def admin_add_plane():
             """, (plane_id, plane_size, plane_manufacturer, purchase_date))
 
         flash("Plane added successfully.", "success")
-        return redirect(url_for("admin"))
+        return redirect(url_for("admin_flights"))
 
     return render_template("admin_add_plane.html")
 
@@ -804,7 +804,7 @@ def admin_add_route():
             """, (route_id, origin, dest, duration))
 
         flash("Route added successfully.", "success")
-        return redirect(url_for("admin"))
+        return redirect(url_for("admin_flights"))
 
     return render_template("admin_add_route.html")
 
@@ -928,7 +928,7 @@ def admin_add_flight():
 
 
         flash("Flight created successfully.", "success")
-        return redirect(url_for("admin"))
+        return redirect(url_for("admin_flights"))
 
     return render_template("admin_add_flight.html", planes=planes, routes=routes, managers=managers, layout_map=layout_map, route_map=route_map)
 
@@ -950,7 +950,7 @@ def admin_cancel_flight(flight_id):
             flash("Flight not found.", "error")
         else:
             flash("Flight cancelled.", "success")
-    return redirect(url_for("admin"))
+    return redirect(url_for("admin_flights"))
 
 @app.route("/admin/dashboard")
 def admin_dashboard():

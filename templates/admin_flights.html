@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Admin{% endblock %}
+{% block title %}Admin flights{% endblock %}
 
 {% block content %}
 <section class="board admin-box">
@@ -24,7 +24,7 @@
 
     <div class="admin-filter-actions">
       <button class="btn" type="submit">Filter</button>
-      <a class="btn" href="{{ url_for('admin') }}">Reset</a>
+      <a class="btn" href="{{ url_for('admin_flights') }}">Reset</a>
     </div>
   </form>
 
