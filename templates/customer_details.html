@@ -3,8 +3,8 @@
 
 {% block content %}
 <section class="board narrow-board">
-  <h1>Your Details</h1>
-  <p class="muted">Please confirm your details before continuing.</p>
+  <h1>Customer Details</h1>
+  <p class="muted">Please confirm your details before continuing</p>
 
   <form method="post" class="form" style="margin-top:12px;">
     <input type="hidden" name="next" value="{{ next_url }}">
@@ -24,7 +24,7 @@
     <label class="field-label">Birth Date</label>
     <input class="field-input" type="date" name="birth_date" value="{{ form.birth_date }}" required>
 
-    <label class="field-label">Phones</label>
+    <label class="field-label">Phone number</label>
     <div id="phones">
       {% if form.phones and form.phones|length > 0 %}
         {% for ph in form.phones %}
