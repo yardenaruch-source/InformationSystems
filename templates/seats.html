@@ -4,8 +4,8 @@
 {% block content %}
 <div class="seats-page">
 <section class="card">
-  <h2 style="color:#051c2e;">Select seats - {{ class_type }} (Flight {{ flight_id }})</h2>
-  <p class="muted" style="color:#051c2e;">Price per seat: {{ cabin.price }} ₪</p>
+  <h2 style="color:#051c2e; text-align: center;">Select seats - {{ class_type }} (Flight {{ flight_id }})</h2>
+  <p class="muted" style="color:#051c2e; text-align: center;">Price per seat: {{ cabin.price }} ₪</p>
 </section>
 
 <section>
@@ -52,8 +52,8 @@
 
 
     <div class="row" style="margin-top:16px; gap:10px;">
-      <a class="btn" href="{{ url_for('flight_details', flight_id=flight_id) }}">Back</a>
-      <button class="btn" type="submit">Continue to checkout</button>
+      <a class="btn" style="text-align: center;" href="{{ url_for('flight_details', flight_id=flight_id) }}">Back</a>
+      <button class="btn" style="text-align: center;" type="submit">Continue to checkout</button>
     </div>
   </form>
 </section>
