@@ -15,7 +15,7 @@
       <option value="Cancelled by system" {% if selected_status=='Cancelled by system' %}selected{% endif %}>Cancelled by system</option>
     </select>
 
-    <div style="display:flex; gap:10px; margin-top:12px;">
+    <div style="display:flex; justify-content:center; gap:10px; margin-top:12px;">
       <button class="btn" type="submit">Filter</button>
       <a class="btn" href="{{ url_for('purchase_history') }}">Reset</a>
     </div>
@@ -52,7 +52,7 @@
         {% endfor %}
       {% else %}
         <tr>
-          <td colspan="8" class="empty-row">No purchases found for this filter.</td>
+          <td colspan="8" class="empty-row">No purchases found for this filter</td>
         </tr>
       {% endif %}
       </tbody>
