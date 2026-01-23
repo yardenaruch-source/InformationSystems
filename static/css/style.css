@@ -599,27 +599,11 @@ main.container{
   grid-template-columns: repeat(var(--cols, 6), max-content);
 }
 
-.row-label{
-  width: 28px;
-  text-align: right;
-  padding-right: 10px;
-  font-weight: 700;
-  color: rgba(0,0,0,0.55);
-}
-
 .seats-map.cols-6 .seat-row{
   grid-template-columns: 28px repeat(6, max-content);
 }
 .seats-map.cols-6 .seat-cell:nth-child(4){
   margin-right: 28px;
-}
-
-.plane-front{
-  text-align: center;
-  font-weight: 800;
-  letter-spacing: 2px;
-  color: rgba(0,0,0,0.55);
-  margin: 6px 0 14px;
 }
 
 /* =========================

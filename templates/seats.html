@@ -28,12 +28,8 @@
 
       <div class="seats-map {{ layout }}">
         <div class="plane-front">FRONT</div>
-
         {% for r in range(1, cabin.rows_num + 1) %}
           <div class="seat-row">
-            <div class="row-label">{{ r }}</div>
-
-
             {% for c in range(1, cabin.columns_num + 1) %}
               {% set is_taken = taken.get((r,c), False) %}
 
