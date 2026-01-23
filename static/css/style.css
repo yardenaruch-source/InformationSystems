@@ -487,10 +487,10 @@ main.container{
 .seats-page .seats-layout{
   display: grid;
   grid-template-columns: 420px 1fr;
-  gap: 12px;
+  gap: 8px;
   align-items: start;
-  max-width: 1020px;
-  margin: 10px auto;
+  max-width: 1000px;
+  margin: 8px auto;
   padding: 0 16px;
 }
 
@@ -503,13 +503,13 @@ main.container{
 /* Left column */
 .seats-page .seats-side{
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 /* Right column */
 .seats-page .seats-main{
   display: grid;
-  gap: 14px;
+  gap: 8px;
   justify-items: center; /* center map + buttons */
 }
 
@@ -519,6 +519,7 @@ main.container{
 .seats-page .seats-legend{
   width: 100%;
   text-align: center;
+  margin: 0;
 }
 
 .seats-page .seats-title{
@@ -532,7 +533,7 @@ main.container{
 }
 
 .seats-page .seats-box-title{
-  margin: 0 0 10px;
+  margin: 0;
   color: #051c2e;
   font-weight: 800;
 }
