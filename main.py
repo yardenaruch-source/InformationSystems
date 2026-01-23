@@ -330,6 +330,103 @@ def guest_details(flight_id):
         registered_customer=False
     )
 
+@app.route("/booking/<flight_id>/customer-details", methods=["GET", "POST"])
+def customer_details(flight_id):
+    # must be logged in
+    if not session.get("user_email"):
+        # if not logged in, send them to guest flow or login
+        return redirect(url_for("guest_details", flight_id=flight_id, next=url_for("flight_details", flight_id=flight_id)))
+
+    flight_id = flight_id.strip().upper()
+
+    # after details, continue to flight details
+    next_url = request.args.get("next") or request.form.get("next") or url_for("flight_details", flight_id=flight_id)
+
+    email = session.get("user_email")
+
+    # GET: prefill form from DB
+    with db_cursor() as cur:
+        cur.execute("""
+            SELECT customer_email, customer_first_name, customer_last_name, passport_id, birth_date
+            FROM Registered_customer
+            WHERE customer_email = %s
+        """, (email,))
+        user = cur.fetchone()
+
+        cur.execute("""
+            SELECT customer_phone
+            FROM Registered_customer_phone
+            WHERE customer_email = %s
+            ORDER BY customer_phone
+        """, (email,))
+        phones = [r["customer_phone"] for r in cur.fetchall()]
+
+    if not user:
+        flash("User not found. Please log in again.", "error")
+        return redirect(url_for("logout"))
+
+    form = {
+        "email": user["customer_email"],
+        "first_name": user["customer_first_name"],
+        "last_name": user["customer_last_name"],
+        "passport_id": user["passport_id"],
+        "birth_date": str(user["birth_date"]),
+        "phones": phones
+    }
+
+    if request.method == "POST":
+        first_name = request.form.get("first_name", "").strip()
+        last_name = request.form.get("last_name", "").strip()
+        passport_id = request.form.get("passport_id", "").strip()
+        birth_date = request.form.get("birth_date", "").strip()
+        phones_new = [p.strip() for p in request.form.getlist("phone") if p.strip()]
+
+        # re-fill if error
+        form.update({
+            "first_name": first_name,
+            "last_name": last_name,
+            "passport_id": passport_id,
+            "birth_date": birth_date,
+            "phones": phones_new
+        })
+
+        # basic validation
+        if not all([first_name, last_name, passport_id, birth_date]) or len(phones_new) == 0:
+            flash("Please fill in all fields (including at least one phone).", "error")
+            return render_template("customer_details.html", flight_id=flight_id, next_url=next_url, form=form)
+
+        try:
+            bd = datetime.strptime(birth_date, "%Y-%m-%d").date()
+            if bd < date(1900, 1, 1) or bd > date.today():
+                raise ValueError()
+        except ValueError:
+            flash("Birth date must be valid (YYYY-MM-DD) and between 1900 and today.", "error")
+            return render_template("customer_details.html", flight_id=flight_id, next_url=next_url, form=form)
+
+        # ✅ Decide what “editing” means:
+        # Option A (recommended): save changes into DB so it updates their profile
+        with db_cursor() as cur:
+            cur.execute("""
+                UPDATE Registered_customer
+                SET customer_first_name = %s,
+                    customer_last_name  = %s,
+                    passport_id         = %s,
+                    birth_date          = %s
+                WHERE customer_email = %s
+            """, (first_name, last_name, passport_id, bd, email))
+
+            cur.execute("DELETE FROM Registered_customer_phone WHERE customer_email = %s", (email,))
+            for ph in phones_new:
+                cur.execute("""
+                    INSERT INTO Registered_customer_phone (customer_email, customer_phone)
+                    VALUES (%s, %s)
+                """, (email, ph))
+
+        flash("Details updated.", "success")
+        return redirect(next_url)
+
+    return render_template("customer_details.html", flight_id=flight_id, next_url=next_url, form=form)
+
 @app.route("/flight/<flight_id>")
 def flight_details(flight_id):
     with db_cursor() as cur:

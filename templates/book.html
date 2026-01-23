@@ -59,9 +59,15 @@
             <td>₪{{ f.from_price }}</td>
             <td>
               {% if session.get('user_email') %}
-                <a class="btn" href="{{ url_for('flight_details', flight_id=f.flight_id) }}">Book</a>
+                <a class="btn"
+                   href="{{ url_for('customer_details', flight_id=f.flight_id, next=url_for('flight_details', flight_id=f.flight_id)) }}">
+                  Book
+                </a>
               {% else %}
-                <a class="btn" href="{{ url_for('booking_log', flight_id=f.flight_id, next=url_for('flight_details', flight_id=f.flight_id)) }}">Book</a>
+                <a class="btn"
+                   href="{{ url_for('booking_log', flight_id=f.flight_id, next=url_for('flight_details', flight_id=f.flight_id)) }}">
+                  Book
+                </a>
               {% endif %}
             </td>
           </tr>

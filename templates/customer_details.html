@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Your Details{% endblock %}
+
+{% block content %}
+<section class="board narrow-board">
+  <h1>Your Details</h1>
+  <p class="muted">Please confirm your details before continuing.</p>
+
+  <form method="post" class="form" style="margin-top:12px;">
+    <input type="hidden" name="next" value="{{ next_url }}">
+
+    <label class="field-label">Email</label>
+    <input class="field-input" type="email" value="{{ form.email }}" readonly>
+
+    <label class="field-label">First Name</label>
+    <input class="field-input" type="text" name="first_name" value="{{ form.first_name }}" required>
+
+    <label class="field-label">Last Name</label>
+    <input class="field-input" type="text" name="last_name" value="{{ form.last_name }}" required>
+
+    <label class="field-label">Passport ID</label>
+    <input class="field-input" type="text" name="passport_id" value="{{ form.passport_id }}" required>
+
+    <label class="field-label">Birth Date</label>
+    <input class="field-input" type="date" name="birth_date" value="{{ form.birth_date }}" required>
+
+    <label class="field-label">Phones</label>
+    <div id="phones">
+      {% if form.phones and form.phones|length > 0 %}
+        {% for ph in form.phones %}
+          <input class="field-input" type="text" name="phone" value="{{ ph }}" required style="margin-bottom:8px;">
+        {% endfor %}
+      {% else %}
+        <input class="field-input" type="text" name="phone" required>
+      {% endif %}
+    </div>
+
+    <button class="btn" type="submit">Continue</button>
+  </form>
+</section>
+{% endblock %}
