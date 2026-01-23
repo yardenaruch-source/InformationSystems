@@ -27,11 +27,11 @@
       {% endfor %}
     </select>
 
-    <label>Manager</label>
-
-    <div class="field-readonly">
-      {{ logged_admin.employee_first_name }} {{ logged_admin.employee_last_name }} — {{ logged_admin.employee_id }}
-    </div>
+    <label class="field-label">Manager</label>
+    <input class="field-input" type="text"
+           value="{{ logged_admin.employee_first_name }} {{ logged_admin.employee_last_name }} — {{ logged_admin.employee_id }}"
+           readonly>
+    <input type="hidden" name="manager_id" value="{{ logged_admin.employee_id }}">
 
     <input type="hidden" name="manager_id" value="{{ logged_admin.employee_id }}">
 
