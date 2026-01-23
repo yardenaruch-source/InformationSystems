@@ -692,7 +692,7 @@ def admin_login():
 
         with db_cursor() as cur:
             cur.execute("""
-                SELECT employee_id, manager_password
+                SELECT employee_id, employee_first_name, manager_password 
                 FROM Manager
                 WHERE employee_id = %s
             """, (employee_id,))
@@ -705,7 +705,9 @@ def admin_login():
         session.permanent = True
 
         session["admin_employee_id"] = manager["employee_id"]
-        flash("Admin login successful!", "success")
+        session['admin_name'] = manager["employee_first_name"]
+
+        flash("Welcome back, admin {manager['employee_first_name']}!", "success")
         return redirect(url_for("admin_flights"))
 
     return render_template("admin_login.html")
@@ -1112,6 +1114,7 @@ def admin_add_employee():
 @app.route("/admin/logout", methods=["POST"])
 def admin_logout():
     session.pop("admin_employee_id", None)
+    session.pop("admin_name", None)
     flash("You were logged out", "success")
     return redirect(url_for("home"))
 
