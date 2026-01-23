@@ -99,9 +99,15 @@ def booking_log(flight_id):
 def logout():
     session.pop("user_email", None)
     session.pop("just_logged_in_name", None)
+
+    # ✅ if the user clicked "Admin" and we forced logout first
+    next_url = session.pop("next_after_logout", None)
+    if next_url:
+        flash("You were logged out", "success")
+        return redirect(next_url)
+
     flash("You were logged out", "success")
     return redirect(url_for("home"))
-
 
 def is_safe_url(target: str) -> bool:
     """Prevent open-redirects (only allow redirects inside your site)."""
@@ -869,14 +875,14 @@ def admin_login():
 
 @app.route("/go-admin")
 def go_admin():
-    # If customer is logged in → block admin
+    # Customer logged in -> block and remember where to go after logout
     if session.get("user_email"):
+        session["next_after_logout"] = url_for("admin_login")
         flash("Please logout of the customer account.", "error")
-        return redirect(url_for("home"))  # or redirect(request.referrer or url_for("home"))
+        return redirect(request.referrer or url_for("home"))
 
-    # Otherwise allow admin login page
+    # Not logged in as customer -> allow admin login
     return redirect(url_for("admin_login"))
-
 
 @app.route("/admin/flights", methods=["GET"])
 def admin_flights():
