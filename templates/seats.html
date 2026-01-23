@@ -3,59 +3,66 @@
 
 {% block content %}
 <div class="seats-page">
-<section class="board">
-  <h2 style="color:#051c2e; text-align: center;">Select seats - {{ class_type }} (Flight {{ flight_id }})</h2>
-  <p class="muted" style="color:#051c2e; text-align: center;">Price per seat: {{ cabin.price }} ₪</p>
-</section>
 
-<section>
-  <form method="post">
-    <input type="hidden" name="class_type" value="{{ class_type }}"/>
+  {# compute layout class once #}
+  {% set cols = cabin.columns_num | int %}
+  {% if cols == 4 %}
+    {% set layout = "cols-4" %}
+  {% elif cols == 6 %}
+    {% set layout = "cols-6" %}
+  {% elif cols == 9 %}
+    {% set layout = "cols-9" %}
+  {% else %}
+    {% set layout = "cols-generic" %}
+  {% endif %}
 
-    <div class="seats-wrap">
+  {# shell wraps to the seat map width so header fits automatically #}
+  <div class="seats-shell">
 
-      {# set layout mode by number of columns #}
-      {% set cols = cabin.columns_num | int %}
-      {% if cols == 4 %}
-        {% set layout = "cols-4" %}
-      {% elif cols == 6 %}
-        {% set layout = "cols-6" %}
-      {% elif cols == 9 %}
-        {% set layout = "cols-9" %}
-      {% else %}
-        {% set layout = "cols-generic" %}
-      {% endif %}
+    <!-- Header (same width as seat map) -->
+    <section class="board seats-header">
+      <h2 class="seats-title">Select seats - {{ class_type }} (Flight {{ flight_id }})</h2>
+      <p class="muted seats-subtitle">Price per seat: {{ cabin.price }} ₪</p>
+    </section>
 
-      <div class="seats-map {{ layout }}">
-        {% for r in range(1, cabin.rows_num + 1) %}
-          <div class="seat-row">
-            {% for c in range(1, cabin.columns_num + 1) %}
-              {% set is_taken = taken.get((r,c), False) %}
+    <section>
+      <form method="post">
+        <input type="hidden" name="class_type" value="{{ class_type }}"/>
 
-              <div class="seat-cell">
-                {% if is_taken %}
-                  <span class="seat-taken">X</span>
-                {% else %}
-                  <label class="seat-tile">
-                    <input type="checkbox" name="seat" value="{{ r }}-{{ c }}">
-                    <span>{{ r }}{{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[c-1] if c <= 26 else c }}</span>
-                  </label>
-                {% endif %}
+        <!-- Seat map container -->
+        <div class="seats-wrap">
+          <div class="seats-map {{ layout }}">
+            {% for r in range(1, cabin.rows_num + 1) %}
+              <div class="seat-row">
+                {% for c in range(1, cabin.columns_num + 1) %}
+                  {% set is_taken = taken.get((r,c), False) %}
+
+                  <div class="seat-cell">
+                    {% if is_taken %}
+                      <span class="seat-taken">X</span>
+                    {% else %}
+                      <label class="seat-tile">
+                        <input type="checkbox" name="seat" value="{{ r }}-{{ c }}">
+                        <span>{{ r }}{{ "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[c-1] if c <= 26 else c }}</span>
+                      </label>
+                    {% endif %}
+                  </div>
+
+                {% endfor %}
               </div>
-
             {% endfor %}
           </div>
-        {% endfor %}
-      </div>
+        </div>
 
-    </div>
+        <!-- Actions -->
+        <div class="seats-actions">
+          <a class="btn" href="{{ url_for('flight_details', flight_id=flight_id) }}">Back</a>
+          <button class="btn" type="submit">Continue to checkout</button>
+        </div>
 
+      </form>
+    </section>
 
-    <div class="row" style="margin-top:16px; gap:10px; text-align: center;">
-      <a class="btn" href="{{ url_for('flight_details', flight_id=flight_id) }}">Back</a>
-      <button class="btn" type="submit">Continue to checkout</button>
-    </div>
-  </form>
-</section>
+  </div>
 </div>
 {% endblock %}

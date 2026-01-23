@@ -477,10 +477,36 @@ main.container{
 /* ===== Seats page tweaks ===== */
 :root{
   --aisle: 28px;
+  --seat: 44px;
 }
 
-.seats-page .card{ margin-top: 10px; }
-.seats-page .card h2{ margin-top: 0; }
+/* Wrap header + map to the same width (auto-fit to seat map) */
+.seats-page .seats-shell{
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Header box should match seat map width */
+.seats-page .seats-header{
+  width: 100%;
+  text-align: center;
+  margin: 10px 0 14px;
+}
+
+/* Title/subtitle colors without inline styles */
+.seats-page .seats-title,
+.seats-page .seats-subtitle{
+  color: #051c2e;
+}
+
+/* Buttons row (centered) */
+.seats-page .seats-actions{
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
 
 /* Container (wraps tightly around seat map) */
 .seats-page .seats-wrap{
@@ -530,8 +556,8 @@ main.container{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
-  height: 44px;
+  min-width: var(--seat);
+  height: var(--seat);
   padding: 0 10px;
   border-radius: 10px;
   border: 2px solid var(--nav-text);
@@ -564,8 +590,8 @@ main.container{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
-  height: 44px;
+  min-width: var(--seat);
+  height: var(--seat);
   border-radius: 10px;
   border: 2px dashed rgba(0,0,0,0.25);
   background: rgba(0,0,0,0.06);
@@ -604,8 +630,8 @@ main.container{
 }
 
   .seat-tile, .seat-taken{
-    min-width: 38px;
-    height: 38px;
+    min-width: var(--seat);
+    height: var(--seat);
     font-size: 12px;
     border-radius: 9px;
   }
