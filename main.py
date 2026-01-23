@@ -735,15 +735,6 @@ def admin():
     where_sql = ("WHERE " + " AND ".join(where)) if where else ""
 
     with db_cursor() as cur:
-        cur.execute("SELECT COUNT(*) AS n FROM Plane")
-        planes_count = cur.fetchone()["n"]
-
-        cur.execute("SELECT COUNT(*) AS n FROM Flight_route")
-        routes_count = cur.fetchone()["n"]
-
-        cur.execute("SELECT COUNT(*) AS n FROM Flight")
-        flights_count = cur.fetchone()["n"]
-
         cur.execute("""
             SELECT
               f.flight_id, f.takeoff_date, f.takeoff_time, f.flight_status,
@@ -760,9 +751,6 @@ def admin():
     return render_template(
         "admin.html",
         flights=flights,
-        planes_count=planes_count,
-        routes_count=routes_count,
-        flights_count=flights_count,
         filters={"flight_id": flight_id, "status": status, "takeoff_date": takeoff_date},
     )
 
@@ -968,12 +956,23 @@ def admin_cancel_flight(flight_id):
 def admin_dashboard():
     if not session.get("admin_employee_id"):
         return redirect(url_for("admin_login"))
-    return render_template("admin_dashboard.html")
 
+    with db_cursor() as cur:
+        cur.execute("SELECT COUNT(*) AS n FROM Plane")
+        planes_count = cur.fetchone()["n"]
 
-from datetime import datetime, date
-from flask import render_template, request, redirect, url_for, session, flash
-from utils import db_cursor
+        cur.execute("SELECT COUNT(*) AS n FROM Flight_route")
+        routes_count = cur.fetchone()["n"]
+
+        cur.execute("SELECT COUNT(*) AS n FROM Flight")
+        flights_count = cur.fetchone()["n"]
+
+    return render_template(
+        "admin_dashboard.html",
+        planes_count=planes_count,
+        routes_count=routes_count,
+        flights_count=flights_count
+    )
 
 @app.route("/admin/add/employees", methods=["GET", "POST"])
 def admin_add_employee():
