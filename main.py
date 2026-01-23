@@ -480,7 +480,7 @@ def purchase_history():
         "Active",
         "Completed",
         "Cancelled by customer",
-        "Cancelled by system"
+        "Cancelled by system",
     }
 
     where = ["o.reg_customer_email = %s"]
@@ -496,7 +496,7 @@ def purchase_history():
     where_sql = "WHERE " + " AND ".join(where)
 
     with db_cursor() as cur:
-        # Main list of orders (one row per order)
+        # One query: orders + seats_count + total price (from Flight_Class_Pricing)
         cur.execute(f"""
             SELECT
               o.order_id,
@@ -507,11 +507,16 @@ def purchase_history():
               f.takeoff_time,
               r.origin_airport,
               r.destination_airport,
-              COUNT(s.order_id) AS seats_count
+              COUNT(s.order_id) AS seats_count,
+              COALESCE(SUM(fcp.price), 0) AS total
             FROM Orders o
             JOIN Flight f ON f.flight_id = o.flight_id
             JOIN Flight_route r ON r.route_id = f.route_id
             LEFT JOIN Seat s ON s.order_id = o.order_id
+            LEFT JOIN Flight_Class_Pricing fcp
+              ON fcp.flight_id  = o.flight_id
+             AND fcp.plane_id   = s.plane_id
+             AND fcp.class_type = s.class_type
             {where_sql}
             GROUP BY
               o.order_id, o.flight_id, o.date_of_purchase, o.order_status,
@@ -519,27 +524,8 @@ def purchase_history():
             ORDER BY o.date_of_purchase DESC
             LIMIT 500
         """, tuple(params))
+
         orders = cur.fetchall()
-
-        # Optional: total price per order (safe even if some orders have 0 seats)
-        # If your Cabin_class price isn't per flight, you can adapt this.
-        cur.execute(f"""
-            SELECT
-              o.order_id,
-              COALESCE(SUM(cc.price), 0) AS total
-            FROM Orders o
-            LEFT JOIN Seat s ON s.order_id = o.order_id
-            LEFT JOIN Cabin_class cc
-              ON cc.plane_id = s.plane_id
-             AND cc.class_type = s.class_type
-            {where_sql}
-            GROUP BY o.order_id
-        """, tuple(params))
-        totals = {row["order_id"]: row["total"] for row in cur.fetchall()}
-
-    # Attach totals to each order row
-    for o in orders:
-        o["total"] = totals.get(o["order_id"], 0)
 
     return render_template(
         "purchase_history.html",
