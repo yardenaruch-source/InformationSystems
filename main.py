@@ -707,7 +707,7 @@ def admin_login():
         session["admin_employee_id"] = manager["employee_id"]
         session['admin_name'] = manager["employee_first_name"]
 
-        flash("Welcome back, admin {manager['employee_first_name']}!", "success")
+        flash(f"Welcome back, admin {manager['employee_first_name']}!", "success")
         return redirect(url_for("admin_flights"))
 
     return render_template("admin_login.html")
