@@ -103,7 +103,6 @@ def logout():
     # ✅ if the user clicked "Admin" and we forced logout first
     next_url = session.pop("next_after_logout", None)
     if next_url:
-        flash("You were logged out", "success")
         return redirect(next_url)
 
     flash("You were logged out", "success")
@@ -878,7 +877,7 @@ def go_admin():
     # Customer logged in -> block and remember where to go after logout
     if session.get("user_email"):
         session["next_after_logout"] = url_for("admin_login")
-        flash("Please logout of the customer account.", "error")
+        flash("Please logout of the customer account", "error")
         return redirect(request.referrer or url_for("home"))
 
     # Not logged in as customer -> allow admin login
