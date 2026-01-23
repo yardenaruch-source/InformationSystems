@@ -403,26 +403,15 @@ def customer_details(flight_id):
             flash("Birth date must be valid (YYYY-MM-DD) and between 1900 and today.", "error")
             return render_template("customer_details.html", flight_id=flight_id, next_url=next_url, form=form)
 
-        # ✅ Decide what “editing” means:
-        # Option A (recommended): save changes into DB so it updates their profile
-        with db_cursor() as cur:
-            cur.execute("""
-                UPDATE Registered_customer
-                SET customer_first_name = %s,
-                    customer_last_name  = %s,
-                    passport_id         = %s,
-                    birth_date          = %s
-                WHERE customer_email = %s
-            """, (first_name, last_name, passport_id, bd, email))
+        session["booking_customer"] = {
+            "email": email,
+            "first_name": first_name,
+            "last_name": last_name,
+            "passport_id": passport_id,
+            "birth_date": birth_date,
+            "phones": phones_new
+        }
 
-            cur.execute("DELETE FROM Registered_customer_phone WHERE customer_email = %s", (email,))
-            for ph in phones_new:
-                cur.execute("""
-                    INSERT INTO Registered_customer_phone (customer_email, customer_phone)
-                    VALUES (%s, %s)
-                """, (email, ph))
-
-        flash("Details updated.", "success")
         return redirect(next_url)
 
     return render_template("customer_details.html", flight_id=flight_id, next_url=next_url, form=form)
@@ -474,6 +463,89 @@ def flight_details(flight_id):
         c["available"] = avail_map.get(c["class_type"], 0)
 
     return render_template("flight_details.html", flight=flight, cabins=cabins)
+
+@app.route("/purchase-history", methods=["GET"])
+def purchase_history():
+    # Only for logged-in users
+    if not session.get("user_email"):
+        flash("Please log in to view your purchase history.", "error")
+        return redirect(url_for("login", next=url_for("purchase_history")))
+
+    email = session["user_email"]
+
+    # Filter status from querystring: ?status=Active / Completed / Cancelled by customer / Cancelled by system
+    status = request.args.get("status", "").strip()
+
+    allowed_statuses = {
+        "Active",
+        "Completed",
+        "Cancelled by customer",
+        "Cancelled by system"
+    }
+
+    where = ["o.reg_customer_email = %s"]
+    params = [email]
+
+    if status:
+        if status not in allowed_statuses:
+            flash("Invalid status filter.", "error")
+            return redirect(url_for("purchase_history"))
+        where.append("o.order_status = %s")
+        params.append(status)
+
+    where_sql = "WHERE " + " AND ".join(where)
+
+    with db_cursor() as cur:
+        # Main list of orders (one row per order)
+        cur.execute(f"""
+            SELECT
+              o.order_id,
+              o.flight_id,
+              o.date_of_purchase,
+              o.order_status,
+              f.takeoff_date,
+              f.takeoff_time,
+              r.origin_airport,
+              r.destination_airport,
+              COUNT(s.order_id) AS seats_count
+            FROM Orders o
+            JOIN Flight f ON f.flight_id = o.flight_id
+            JOIN Flight_route r ON r.route_id = f.route_id
+            LEFT JOIN Seat s ON s.order_id = o.order_id
+            {where_sql}
+            GROUP BY
+              o.order_id, o.flight_id, o.date_of_purchase, o.order_status,
+              f.takeoff_date, f.takeoff_time, r.origin_airport, r.destination_airport
+            ORDER BY o.date_of_purchase DESC
+            LIMIT 500
+        """, tuple(params))
+        orders = cur.fetchall()
+
+        # Optional: total price per order (safe even if some orders have 0 seats)
+        # If your Cabin_class price isn't per flight, you can adapt this.
+        cur.execute(f"""
+            SELECT
+              o.order_id,
+              COALESCE(SUM(cc.price), 0) AS total
+            FROM Orders o
+            LEFT JOIN Seat s ON s.order_id = o.order_id
+            LEFT JOIN Cabin_class cc
+              ON cc.plane_id = s.plane_id
+             AND cc.class_type = s.class_type
+            {where_sql}
+            GROUP BY o.order_id
+        """, tuple(params))
+        totals = {row["order_id"]: row["total"] for row in cur.fetchall()}
+
+    # Attach totals to each order row
+    for o in orders:
+        o["total"] = totals.get(o["order_id"], 0)
+
+    return render_template(
+        "purchase_history.html",
+        orders=orders,
+        selected_status=status
+    )
 
 def generate_order_id(cur, max_tries=20):
     for _ in range(max_tries):

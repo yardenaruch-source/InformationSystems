@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Purchase History{% endblock %}
+
+{% block content %}
+<section class="board">
+  <h1 style="text-align:center;">Purchase History</h1>
+
+  <form method="get" class="form" style="max-width:520px; margin: 0 auto 16px;">
+    <label>Status</label>
+    <select name="status">
+      <option value="" {% if not selected_status %}selected{% endif %}>All</option>
+      <option value="Active" {% if selected_status=='Active' %}selected{% endif %}>Active</option>
+      <option value="Completed" {% if selected_status=='Completed' %}selected{% endif %}>Completed</option>
+      <option value="Cancelled by customer" {% if selected_status=='Cancelled by customer' %}selected{% endif %}>Cancelled by customer</option>
+      <option value="Cancelled by system" {% if selected_status=='Cancelled by system' %}selected{% endif %}>Cancelled by system</option>
+    </select>
+
+    <div style="display:flex; gap:10px; margin-top:12px;">
+      <button class="btn" type="submit">Filter</button>
+      <a class="btn" href="{{ url_for('purchase_history') }}">Reset</a>
+    </div>
+  </form>
+
+  <div class="board-table-wrap">
+    <table class="board-table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Flight</th>
+          <th>Route</th>
+          <th>Takeoff</th>
+          <th>Purchased</th>
+          <th>Status</th>
+          <th>Seats</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+
+      <tbody>
+      {% if orders and orders|length > 0 %}
+        {% for o in orders %}
+        <tr>
+          <td>{{ o.order_id }}</td>
+          <td>{{ o.flight_id }}</td>
+          <td>{{ o.origin_airport }} → {{ o.destination_airport }}</td>
+          <td>{{ o.takeoff_date }} {{ o.takeoff_time }}</td>
+          <td>{{ o.date_of_purchase }}</td>
+          <td>{{ o.order_status }}</td>
+          <td>{{ o.seats_count }}</td>
+          <td>₪{{ o.total }}</td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="8" class="empty-row">No purchases found for this filter.</td>
+        </tr>
+      {% endif %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
