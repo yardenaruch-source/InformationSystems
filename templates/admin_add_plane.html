@@ -11,7 +11,7 @@
     <input class="field-input" name="plane_id" placeholder="e.g. P0001" required>
 
     <label class="field-label">Size</label>
-    <select class="field-input" name="plane_size" required>
+    <select class="field-input" name="plane_size" id="plane_size" required>
       <option value="Small">Small</option>
       <option value="Large">Large</option>
     </select>
@@ -28,68 +28,74 @@
 
     <hr style="margin:18px 0; opacity:0.35;">
 
+    <!-- ✅ Cabin Layout Boxes -->
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-      <!-- Economy card -->
+
+      <!-- Economy -->
       <div class="card" style="padding:12px;">
         <b>Economy</b>
 
         <label class="field-label">Rows</label>
-        <input class="field-input" type="number" min="1" step="1"
-               name="econ_rows" placeholder="e.g. 22" required>
+        <input class="field-input" type="number" min="1"
+               name="econ_rows" id="econ_rows" required>
 
         <label class="field-label">Columns</label>
-        <input class="field-input" type="number" min="1" step="1"
-               name="econ_cols" placeholder="e.g. 6" required>
+        <input class="field-input" type="number" min="1"
+               name="econ_cols" id="econ_cols" required>
       </div>
 
-      <!-- Business card -->
-      <div class="card" style="padding:12px;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-          <b>Business</b>
-          <label class="muted" style="display:flex; gap:8px; align-items:center; margin:0;">
-            <input type="checkbox" id="has_business" name="has_business">
-            Has Business
-          </label>
-        </div>
+      <!-- Business (shown only for Large) -->
+      <div class="card" id="businessCard" style="padding:12px;">
+        <b>Business</b>
 
         <label class="field-label">Rows</label>
-        <input class="field-input" id="bus_rows" type="number" min="1" step="1"
-               name="bus_rows" placeholder="e.g. 8" disabled>
+        <input class="field-input" type="number" min="1"
+               name="bus_rows" id="bus_rows">
 
         <label class="field-label">Columns</label>
-        <input class="field-input" id="bus_cols" type="number" min="1" step="1"
-               name="bus_cols" placeholder="e.g. 4" disabled>
+        <input class="field-input" type="number" min="1"
+               name="bus_cols" id="bus_cols">
       </div>
+
     </div>
 
     <div style="justify-content:center; display:flex; gap:10px; margin-top:12px;">
       <button class="btn" type="submit">Save</button>
     </div>
+
   </form>
 </section>
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const cb = document.getElementById("has_business");
-  const r = document.getElementById("bus_rows");
-  const c = document.getElementById("bus_cols");
+  const sizeSelect   = document.getElementById("plane_size");
+  const businessCard = document.getElementById("businessCard");
+  const busRows      = document.getElementById("bus_rows");
+  const busCols      = document.getElementById("bus_cols");
 
-  function sync() {
-    const on = cb && cb.checked;
-    if (!r || !c) return;
+  function updateBusinessVisibility() {
+    const size = sizeSelect.value;
+    const isLarge = (size === "Large");
 
-    r.disabled = !on;
-    c.disabled = !on;
-
-    // if disabled -> clear so it won't submit old values
-    if (!on) {
-      r.value = "";
-      c.value = "";
+    if (isLarge) {
+      businessCard.style.display = "";
+      busRows.disabled = false;
+      busCols.disabled = false;
+      busRows.required = true;
+      busCols.required = true;
+    } else {
+      businessCard.style.display = "none";
+      busRows.value = "";
+      busCols.value = "";
+      busRows.disabled = true;
+      busCols.disabled = true;
+      busRows.required = false;
+      busCols.required = false;
     }
   }
 
-  if (cb) cb.addEventListener("change", sync);
-  sync();
+  sizeSelect.addEventListener("change", updateBusinessVisibility);
+  updateBusinessVisibility();
 });
 </script>
 {% endblock %}
