@@ -43,15 +43,15 @@
       {% if can_cancel %}
         <p class="muted" style="margin-top:8px;">
           You can cancel up to <b>36 hours</b> before takeoff<br>
-          Cancellation fee: <b>5%</b> (₪{{ "%.2f"|format((total|float) * 0.05) }})<br>
-          Refund: <b>95%</b> (₪{{ "%.2f"|format((total|float) * 0.95) }})
+          Cancellation fee: <b>5%</b> ({{ "%.2f"|format((total|float) * 0.05) }} ₪)<br>
+          Refund: <b>95%</b> ({{ "%.2f"|format((total|float) * 0.95) }} ₪)
         </p>
 
         <form method="post"
               action="{{ url_for('cancel_order', order_id=order.order_id) }}"
               onsubmit="return confirm('Cancel order {{ order.order_id }}? Fee 5%, refund 95%.');"
               style="margin-top:10px;">
-          <button class="btn btn-outline" type="submit">Cancel Order</button>
+          <button class="btn" type="submit">Cancel Order</button>
         </form>
       {% else %}
         <p class="muted" style="margin-top:8px;">
