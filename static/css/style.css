@@ -901,3 +901,15 @@ main.container{
 .admin-box{
   margin-top: 22px;   /* space between the 2 containers */
 }
+
+.form .cabin-card b{
+  display: block;          /* IMPORTANT so margins work */
+  margin-top: -6px;        /* moves "Economy/Business" a bit higher */
+  margin-bottom: 14px;     /* bigger gap before "Rows" */
+}
+
+/* Override the global rule `.form label { margin-bottom:-4px }` only here */
+.form .cabin-card label{
+  display: block;
+  margin-bottom: 8px !important;
+}
