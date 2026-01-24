@@ -522,13 +522,6 @@ main.container{
   margin: 0;
 }
 
-.seats-page .seats-legend{
-  width: 100%;
-  text-align: center;
-  margin: 0;
-  font-size: 18px;
-}
-
 .seats-page .seats-title{
   margin: 0;
   color: #051c2e;
@@ -580,19 +573,21 @@ main.container{
    Legend (straight + centered as a block)
    ========================= */
 
-/* Center the legend "group" inside the box */
 .seats-page .seats-legend{
+  width: 100%;
+  margin: 0;
   text-align: center;
+
   display: flex;
   flex-direction: column;
-  align-items: center;  /* centers the group */
-  gap: 12px;            /* space between rows */
+  align-items: center;
+  gap: 12px;
 }
 
 /* Each legend row: fixed swatch column + text column */
 .seats-page .legend-item{
   display: grid;
-  grid-template-columns: 37 px auto;
+  grid-template-columns: 44px auto;
   align-items: center;
   justify-content: start;
   gap: 12px;
@@ -637,8 +632,7 @@ main.container{
   color: rgba(0,0,0,0.45);
 }
 
-/* Keep legend text on the same line as the swatch */
-.seats-page .seats-legend .legend-item > span:last-child{
+.seats-page .legend-item > span:last-child{
   display: inline-block;
   white-space: nowrap;
 }
