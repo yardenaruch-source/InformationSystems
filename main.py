@@ -1063,23 +1063,32 @@ def admin_add_route():
 
 def has_plane_conflict(cur, plane_id, new_start_dt, new_end_dt):
     """
-    Returns True if the plane is already used in an overlapping flight window.
-    Considers Scheduled/Full flights only.
+    Returns a dict with the conflicting flight (flight_id + window) if conflict exists,
+    otherwise returns None.
+    Only considers Scheduled/Full flights.
     """
+    plane_id = (plane_id or "").strip().upper()
+
     cur.execute("""
-        SELECT 1
+        SELECT
+          f.flight_id,
+          f.flight_status,
+          TIMESTAMP(f.takeoff_date, f.takeoff_time) AS start_dt,
+          DATE_ADD(
+            TIMESTAMP(f.takeoff_date, f.takeoff_time),
+            INTERVAL r.flight_duration MINUTE
+          ) AS end_dt
         FROM Flight f
         JOIN Flight_route r ON r.route_id = f.route_id
         WHERE f.plane_id = %s
           AND f.flight_status IN ('Scheduled', 'Full')
-          AND (
-            %s < DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)
-            AND
-            %s > TIMESTAMP(f.takeoff_date, f.takeoff_time)
-          )
+          AND %s < DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)
+          AND %s > TIMESTAMP(f.takeoff_date, f.takeoff_time)
+        ORDER BY start_dt
         LIMIT 1
     """, (plane_id, new_start_dt, new_end_dt))
-    return cur.fetchone() is not None
+
+    return cur.fetchone()  # None if no conflict
 
 
 def has_employee_conflict(cur, link_table, employee_id, new_start_dt, new_end_dt):
@@ -1205,7 +1214,7 @@ def admin_add_flight():
     if request.method == "POST":
         flight_id = request.form.get("flight_id", "").strip().upper()
         route_id = request.form.get("route_id", "").strip()          # confirm it's string
-        plane_id = request.form.get("plane_id", "").strip()
+        plane_id = request.form.get("plane_id", "").strip().upper()
         manager_id = session.get("admin_employee_id")
         takeoff_date = request.form.get("takeoff_date", "").strip()
         takeoff_time = request.form.get("takeoff_time", "").strip()
@@ -1252,9 +1261,16 @@ def admin_add_flight():
                 new_start_dt = datetime.strptime(f"{takeoff_date} {takeoff_time}", "%Y-%m-%d %H:%M")
                 new_end_dt = new_start_dt + timedelta(minutes=int(duration_minutes))
 
+                cur.execute("SELECT DATABASE() AS db")
+                print("DB in use:", cur.fetchone()["db"])
+
                 # 1) Prevent plane overlap (THIS is your requirement)
-                if has_plane_conflict(cur, plane_id, new_start_dt, new_end_dt):
-                    return render_with_error("This plane already has another flight that overlaps this time window.")
+                conflict = has_plane_conflict(cur, plane_id, new_start_dt, new_end_dt)
+                if conflict:
+                    return render_with_error(
+                        f"Plane {plane_id} overlaps with flight {conflict['flight_id']} "
+                        f"({conflict['start_dt']} → {conflict['end_dt']}, status={conflict['flight_status']})."
+                    )
 
                 # 2) (Optional but recommended) Prevent crew overlap too
                 for pid in pilot_ids:
