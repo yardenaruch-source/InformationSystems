@@ -2,7 +2,7 @@
 {% block title %}Checkout{% endblock %}
 
 {% block content %}
-<section class="board narrow-board" style="text-align:center;">
+<section class="board narrow-board" style="text-align:center; color: var(--text);">
   <h2 >Checkout</h2>
 
   <p style="line-height:1.7;">
@@ -24,7 +24,7 @@
 
   {% if order.order_status == 'Pending' %}
     <p class="muted" style="margin-top:10px;">
-    Your seats are reserved for <b>15 minutes</b>.
+    Your seats are reserved for <b>15 minutes</b>.<br>
     If you don’t confirm the order in time, the reservation will be cancelled automatically.
     </p>
 
