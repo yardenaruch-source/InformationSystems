@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from utils import db_cursor
 import mysql.connector
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
 from urllib.parse import urlparse, urljoin
 import re
 
@@ -14,6 +14,16 @@ def refresh_session():
     if session.get("user_email") or session.get("admin_employee_id"):
         session.permanent = True
         session.modified = True
+
+def normalize_time(t):
+    # MySQL TIME can come back as timedelta in mysql-connector
+    if isinstance(t, timedelta):
+        secs = int(t.total_seconds())
+        h = secs // 3600
+        m = (secs % 3600) // 60
+        s = secs % 60
+        return time(h % 24, m, s)
+    return t
 
 PHONE_RE = re.compile(r"^[0-9-]+$")
 
@@ -809,10 +819,13 @@ def tickets():
 
         with db_cursor() as cur:
             cur.execute("""
-                SELECT o.order_id, o.flight_id, o.order_status,
-                       f.takeoff_date, f.takeoff_time,
-                       r.origin_airport, r.destination_airport,
-                       o.guest_email, o.reg_customer_email
+                SELECT
+                    o.order_id, o.flight_id, o.order_status,
+                    f.takeoff_date, f.takeoff_time,
+                    DATE(DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)) AS landing_date,
+                    TIME(DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)) AS landing_time,
+                    r.origin_airport, r.destination_airport,
+                    o.guest_email, o.reg_customer_email
                 FROM Orders o
                 JOIN Flight f ON f.flight_id = o.flight_id
                 JOIN Flight_route r ON r.route_id = f.route_id
@@ -845,11 +858,9 @@ def tickets():
             total = (cur.fetchone() or {}).get("total") or 0
 
         # cancel eligibility: > 36 hours before takeoff and status Active
-        try:
-            takeoff_dt = datetime.combine(order["takeoff_date"], order["takeoff_time"])
-            can_cancel = (order["order_status"] == "Active") and (takeoff_dt - datetime.now() > timedelta(hours=36))
-        except Exception:
-            can_cancel = False
+        takeoff_t = normalize_time(order["takeoff_time"])
+        takeoff_dt = datetime.combine(order["takeoff_date"], takeoff_t)
+        can_cancel = (order["order_status"] == "Active") and (takeoff_dt - datetime.now() > timedelta(hours=36))
 
     return render_template("tickets.html", order=order, seats=seats, total=total, can_cancel=can_cancel)
 
@@ -874,16 +885,40 @@ def cancel_order(order_id):
             flash("Only active orders can be cancelled.", "error")
             return redirect(url_for("tickets"))
 
-        takeoff_dt = datetime.combine(order["takeoff_date"], order["takeoff_time"])
+        # ✅ 36h rule
+        takeoff_t = normalize_time(order["takeoff_time"])
+        takeoff_dt = datetime.combine(order["takeoff_date"], takeoff_t)
         if takeoff_dt - datetime.now() <= timedelta(hours=36):
             flash("Too late to cancel (must be more than 36 hours before takeoff).", "error")
             return redirect(url_for("tickets"))
 
-        # apply cancellation: update status + release seats
-        cur.execute("UPDATE Orders SET order_status = 'Cancelled by customer' WHERE order_id = %s", (order_id,))
-        cur.execute("UPDATE Seat SET order_id = NULL WHERE order_id = %s", (order_id,))
+        # ✅ STEP 1: calculate total BEFORE releasing seats
+        cur.execute("""
+            SELECT COALESCE(SUM(fcp.price), 0) AS total
+            FROM Seat s
+            JOIN Flight_Class_Pricing fcp
+              ON fcp.flight_id  = s.flight_id
+             AND fcp.plane_id   = s.plane_id
+             AND fcp.class_type = s.class_type
+            WHERE s.order_id = %s
+        """, (order_id,))
+        total = (cur.fetchone() or {}).get("total") or 0
 
-        flash("Order cancelled. A 5% cancellation fee applies.", "success")
+        fee = round(float(total) * 0.05, 2)
+        refund = round(float(total) * 0.95, 2)
+
+        # ✅ STEP 2: apply cancellation (update status + release seats)
+        cur.execute(
+            "UPDATE Orders SET order_status = 'Cancelled by customer' WHERE order_id = %s",
+            (order_id,)
+        )
+        cur.execute(
+            "UPDATE Seat SET order_id = NULL WHERE order_id = %s",
+            (order_id,)
+        )
+
+        # ✅ STEP 3: show refund message
+        flash(f"Order cancelled. Fee ₪{fee:.2f}. Refund ₪{refund:.2f}.", "success")
 
     return redirect(url_for("tickets"))
 
