@@ -1240,9 +1240,6 @@ def admin_add_flight():
         if not all([flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time]):
             return render_with_error("Please fill in the required flight fields.")
 
-        if not econ_price or not bus_price:
-            return render_with_error("Please enter Economy and Business prices.")
-
         try:
             with db_cursor() as cur:
                 # 0) Make sure flight_id does not already exist (friendly message instead of DB crash)
@@ -1284,11 +1281,15 @@ def admin_add_flight():
                 econ_rows, econ_cols = layout["Economy"]
                 bus_rows = bus_cols = 0
                 has_business = "Business" in layout
+
+                if not econ_price:
+                    return render_with_error("Please enter Economy price.")
+
+                if has_business and not bus_price:
+                    return render_with_error("Please enter Business price.")
+
                 if has_business:
                     bus_rows, bus_cols = layout["Business"]
-
-                econ_rows, econ_cols = layout["Economy"]
-                bus_rows, bus_cols = layout["Business"]
 
                 # 2) ✅ Long-flight training enforcement (server-side)
                 if is_long_flight:
