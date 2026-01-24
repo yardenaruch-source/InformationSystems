@@ -619,7 +619,7 @@ def cleanup_expired_pending_orders():
             cur.execute("UPDATE Seat SET order_id = NULL WHERE order_id = %s", (oid,))
             cur.execute("""
                 UPDATE Orders
-                SET order_status = 'Cancelled by system'
+                SET order_status = 'Cancelled by customer'
                 WHERE order_id = %s
             """, (oid,))
 
