@@ -570,27 +570,32 @@ main.container{
   padding-top: 14px;
 }
 
-/* ---- Legend box (aligned rows) ---- */
-
 /* =========================
-   Legend (aligned + consistent)
+   Legend (straight + centered as a block)
    ========================= */
 
-/* Center the whole legend block inside the box */
+/* Center the legend "group" inside the box */
 .seats-page .seats-legend{
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;  /* centers the group */
+  gap: 12px;            /* space between rows */
 }
 
 /* Each legend row: fixed swatch column + text column */
 .seats-page .legend-item{
   display: grid;
-  grid-template-columns: 34px auto;   /* fixed column => straight alignment */
+  grid-template-columns: 32px auto;
   align-items: center;
-  justify-content: start;             /* left-align inside the legend block */
+  justify-content: start;
   gap: 12px;
 
-  width: fit-content;                /* keep legend compact */
-  margin: 12px auto;                 /* center the compact legend */
+  /* IMPORTANT: same width for all rows -> straight edges */
+  width: 180px;        /* adjust 160–220 if you want */
+  max-width: 100%;
+
+  margin: 0;           /* no auto-centering per row */
   color: #051c2e;
   font-weight: 700;
 }
@@ -601,10 +606,10 @@ main.container{
   height: 26px;
   border-radius: 8px;
   display: grid;
-  place-items: center;               /* perfect center (better than flex here) */
+  place-items: center;
   font-weight: 900;
   line-height: 1;
-  font-size: 14px;                   /* keeps X consistent */
+  font-size: 14px;
 }
 
 /* Available */
@@ -619,7 +624,7 @@ main.container{
   border: 2px solid rgba(0,0,0,0.35);
 }
 
-/* Taken (X stays centered) */
+/* Taken */
 .seats-page .legend-taken{
   background: rgba(0,0,0,0.06);
   border: 2px dashed rgba(0,0,0,0.25);
