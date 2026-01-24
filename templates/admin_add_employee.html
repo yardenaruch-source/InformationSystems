@@ -36,8 +36,9 @@
            value="{{ form.last_name }}" required>
 
     <label class="field-label">Phone Number</label>
-    <input class="field-input" type="text" name="phone"
-           value="{{ form.phone }}" required>
+    <input class="field-input" type="text" name="phone" value="{{ form.phone }}" required
+       pattern="^[0-9-]+$" inputmode="numeric"
+       title="Only digits and '-' are allowed">
 
     <hr style="margin:16px 0; opacity:0.35;">
 

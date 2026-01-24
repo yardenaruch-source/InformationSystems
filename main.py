@@ -3,6 +3,7 @@ from utils import db_cursor
 import mysql.connector
 from datetime import datetime, date, timedelta
 from urllib.parse import urlparse, urljoin
+import re
 
 app = Flask(__name__)
 app.secret_key = 'the_winning_triplet'
@@ -13,6 +14,16 @@ def refresh_session():
     if session.get("user_email") or session.get("admin_employee_id"):
         session.permanent = True
         session.modified = True
+
+PHONE_RE = re.compile(r"^[0-9-]+$")
+
+def normalize_phone(p: str) -> str:
+    # optional: remove spaces, keep digits + dashes only
+    return (p or "").strip().replace(" ", "")
+
+def is_valid_phone(p: str) -> bool:
+    p = normalize_phone(p)
+    return bool(p) and PHONE_RE.fullmatch(p) is not None
 
 def current_user():
     email = session.get("user_email")
@@ -133,7 +144,8 @@ def register():
         password = request.form.get("password", "").strip()
         passport_id = request.form.get("passport_id", "").strip()
         birth_date = request.form.get("birth_date", "").strip()
-        phones = [p.strip() for p in request.form.getlist("phone") if p.strip()]
+        phones = [normalize_phone(p) for p in request.form.getlist("phone")]
+        phones = [p for p in phones if p]  # keep non-empty
 
         form = {
             "first_name": first_name,
@@ -160,6 +172,10 @@ def register():
 
         if bd < date(1900, 1, 1) or bd > date.today():
             flash("Birth date must be between 1900-01-01 and today.", "error")
+            return render_template("register.html", today=today, next=next_url, form=form)
+
+        if any(not is_valid_phone(p) for p in phones):
+            flash("Phone numbers can contain only digits and '-'.", "error")
             return render_template("register.html", today=today, next=next_url, form=form)
 
         try:
@@ -287,13 +303,24 @@ def guest_details(flight_id):
         email = request.form.get("email", "").strip().lower()
         full_name = request.form.get("full_name", "").strip()
         passport_id = request.form.get("passport_id", "").strip()  # collected but NOT saved
-        phones = [p.strip() for p in request.form.getlist("phone") if p.strip()]
+        phones = [normalize_phone(p) for p in request.form.getlist("phone")]
+        phones = [p for p in phones if p]
 
         form = {"email": email, "full_name": full_name, "passport_id": passport_id, "phones": phones}
 
         # validation
         if not email or not full_name or not passport_id or len(phones) == 0:
             flash("Please fill in all fields (including at least one phone).", "error")
+            return render_template(
+                "guest_details.html",
+                flight_id=flight_id,
+                next_url=next_url,
+                form=form,
+                registered_customer=False
+            )
+
+        if any(not is_valid_phone(p) for p in phones):
+            flash("Phone numbers can contain only digits and '-'.", "error")
             return render_template(
                 "guest_details.html",
                 flight_id=flight_id,
@@ -384,7 +411,8 @@ def customer_details(flight_id):
         last_name = request.form.get("last_name", "").strip()
         passport_id = request.form.get("passport_id", "").strip()
         birth_date = request.form.get("birth_date", "").strip()
-        phones_new = [p.strip() for p in request.form.getlist("phone") if p.strip()]
+        phones_new = [normalize_phone(p) for p in request.form.getlist("phone")]
+        phones_new = [p for p in phones_new if p]
 
         # re-fill if error
         form.update({
@@ -398,6 +426,10 @@ def customer_details(flight_id):
         # basic validation
         if not all([first_name, last_name, passport_id, birth_date]) or len(phones_new) == 0:
             flash("Please fill in all fields (including at least one phone).", "error")
+            return render_template("customer_details.html", flight_id=flight_id, next_url=next_url, form=form)
+
+        if any(not is_valid_phone(p) for p in phones_new):
+            flash("Phone numbers can contain only digits and '-'.", "error")
             return render_template("customer_details.html", flight_id=flight_id, next_url=next_url, form=form)
 
         try:
@@ -1183,7 +1215,7 @@ def admin_add_employee():
         employee_id = request.form.get("employee_id", "").strip()
         first_name = request.form.get("first_name", "").strip()
         last_name = request.form.get("last_name", "").strip()
-        phone = request.form.get("phone", "").strip()
+        phone = normalize_phone(request.form.get("phone", ""))
         city = request.form.get("city", "").strip()
         street = request.form.get("street", "").strip()
         street_num_raw = request.form.get("street_num", "").strip()
@@ -1216,6 +1248,10 @@ def admin_add_employee():
 
         if len(employee_id) != 9 or not employee_id.isdigit():
             flash("Employee ID must be exactly 9 digits.", "error")
+            return render_template("admin_add_employee.html", form=form)
+
+        if not is_valid_phone(phone):
+            flash("Phone number can contain only digits and '-'.", "error")
             return render_template("admin_add_employee.html", form=form)
 
         try:

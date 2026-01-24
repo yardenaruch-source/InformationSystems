@@ -48,10 +48,15 @@
     <div id="phones-wrap" style="display:flex; flex-direction:column; gap:10px;">
       {% if form and form.phones and form.phones|length > 0 %}
         {% for p in form.phones %}
-          <input type="text" name="phone" placeholder="e.g. 054-1234567" required value="{{ p }}">
+          <input type="text" name="phone" placeholder="e.g. 054-1234567" required
+           pattern="^[0-9-]+$" inputmode="numeric"
+           title="Only digits and '-' are allowed"
+           value="{{ p }}">
         {% endfor %}
       {% else %}
-        <input type="text" name="phone" placeholder="e.g. 054-1234567" required>
+        <input type="text" name="phone" placeholder="e.g. 054-1234567" required
+          pattern="^[0-9-]+$" inputmode="numeric"
+          title="Only digits and '-' are allowed">
       {% endif %}
     </div>
 
@@ -67,11 +72,19 @@
   document.getElementById("add-phone-btn").addEventListener("click", () => {
     const wrap = document.getElementById("phones-wrap");
     const inp = document.createElement("input");
+
     inp.type = "text";
     inp.name = "phone";
     inp.placeholder = "e.g. 054-1234567";
     inp.required = true;
+
+    /* ✅ add validation here */
+    inp.pattern = "^[0-9-]+$";
+    inp.inputMode = "numeric";
+    inp.title = "Only digits and '-' are allowed";
+
     wrap.appendChild(inp);
   });
 </script>
+
 {% endblock %}
