@@ -486,11 +486,12 @@ main.container{
 /* ---- Page layout (left info + right seat map) ---- */
 .seats-page .seats-layout{
   display: grid;
-  grid-template-columns: 360px 1fr;
-  gap: 6px;
+  grid-template-columns: 420px max-content;
+  gap: 18px;
   align-items: start;
-  max-width: 1000px;
-  margin: 8px auto;
+  width: fit-content;
+  max-width: 100%;
+  margin: 20px auto;
   padding: 0 16px;
 }
 
@@ -571,45 +572,54 @@ main.container{
 
 /* ---- Legend box (aligned rows) ---- */
 
-/* Each legend row = 2 columns: [icon] [text] */
+/* =========================
+   Legend (aligned + consistent)
+   ========================= */
+
+/* Center the whole legend block inside the box */
+.seats-page .seats-legend{
+  text-align: center;
+}
+
+/* Each legend row: fixed swatch column + text column */
 .seats-page .legend-item{
   display: grid;
-  grid-template-columns: 30px auto; /* fixed icon column -> straight alignment */
+  grid-template-columns: 34px auto;   /* fixed column => straight alignment */
   align-items: center;
-  justify-content: start;           /* left-align inside the legend box */
+  justify-content: start;             /* left-align inside the legend block */
   gap: 12px;
 
-  width: fit-content;              /* keeps it compact */
-  margin: 10px auto;               /* centers the compact legend block */
+  width: fit-content;                /* keep legend compact */
+  margin: 12px auto;                 /* center the compact legend */
   color: #051c2e;
   font-weight: 700;
 }
 
-/* All icons same size + centered content */
+/* Swatch: identical size + perfect centering */
 .seats-page .legend-swatch{
   width: 26px;
   height: 26px;
   border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;               /* perfect center (better than flex here) */
   font-weight: 900;
-  line-height: 1;                  /* helps the X sit centered */
+  line-height: 1;
+  font-size: 14px;                   /* keeps X consistent */
 }
 
-/* Available swatch */
+/* Available */
 .seats-page .legend-available{
   background: rgba(255,255,255,0.98);
   border: 2px solid var(--nav-text);
 }
 
-/* Selected swatch */
+/* Selected */
 .seats-page .legend-selected{
   background: #9ed3d0;
   border: 2px solid rgba(0,0,0,0.35);
 }
 
-/* Taken swatch */
+/* Taken (X stays centered) */
 .seats-page .legend-taken{
   background: rgba(0,0,0,0.06);
   border: 2px dashed rgba(0,0,0,0.25);
