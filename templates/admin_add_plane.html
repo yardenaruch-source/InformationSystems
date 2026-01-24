@@ -6,6 +6,7 @@
   <h2 style="text-align: center;">Add Plane</h2>
 
   <form method="post" class="form" style="margin-top:12px;">
+
     <label class="field-label">Plane ID</label>
     <input class="field-input" name="plane_id" placeholder="e.g. P0001" required>
 
@@ -25,9 +26,70 @@
     <label class="field-label">Purchase Date</label>
     <input class="field-input" type="date" name="purchase_date" required>
 
+    <hr style="margin:18px 0; opacity:0.35;">
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+      <!-- Economy card -->
+      <div class="card" style="padding:12px;">
+        <b>Economy</b>
+
+        <label class="field-label">Rows</label>
+        <input class="field-input" type="number" min="1" step="1"
+               name="econ_rows" placeholder="e.g. 22" required>
+
+        <label class="field-label">Columns</label>
+        <input class="field-input" type="number" min="1" step="1"
+               name="econ_cols" placeholder="e.g. 6" required>
+      </div>
+
+      <!-- Business card -->
+      <div class="card" style="padding:12px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <b>Business</b>
+          <label class="muted" style="display:flex; gap:8px; align-items:center; margin:0;">
+            <input type="checkbox" id="has_business" name="has_business">
+            Has Business
+          </label>
+        </div>
+
+        <label class="field-label">Rows</label>
+        <input class="field-input" id="bus_rows" type="number" min="1" step="1"
+               name="bus_rows" placeholder="e.g. 8" disabled>
+
+        <label class="field-label">Columns</label>
+        <input class="field-input" id="bus_cols" type="number" min="1" step="1"
+               name="bus_cols" placeholder="e.g. 4" disabled>
+      </div>
+    </div>
+
     <div style="justify-content:center; display:flex; gap:10px; margin-top:12px;">
       <button class="btn" type="submit">Save</button>
     </div>
   </form>
 </section>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const cb = document.getElementById("has_business");
+  const r = document.getElementById("bus_rows");
+  const c = document.getElementById("bus_cols");
+
+  function sync() {
+    const on = cb && cb.checked;
+    if (!r || !c) return;
+
+    r.disabled = !on;
+    c.disabled = !on;
+
+    // if disabled -> clear so it won't submit old values
+    if (!on) {
+      r.value = "";
+      c.value = "";
+    }
+  }
+
+  if (cb) cb.addEventListener("change", sync);
+  sync();
+});
+</script>
 {% endblock %}

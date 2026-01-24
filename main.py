@@ -1019,18 +1019,73 @@ def admin_add_plane():
         plane_manufacturer = request.form.get("plane_manufacturer", "").strip()
         purchase_date = request.form.get("purchase_date", "").strip()
 
-        if not all([plane_id, plane_size, plane_manufacturer, purchase_date]):
-            flash("Please fill in all fields.", "error")
+        econ_rows = request.form.get("econ_rows", "").strip()
+        econ_cols = request.form.get("econ_cols", "").strip()
+
+        has_business = bool(request.form.get("has_business"))
+        bus_rows = request.form.get("bus_rows", "").strip()
+        bus_cols = request.form.get("bus_cols", "").strip()
+
+        # Basic required fields
+        if not all([plane_id, plane_size, plane_manufacturer, purchase_date, econ_rows, econ_cols]):
+            flash("Please fill in all required fields (including Economy layout).", "error")
             return render_template("admin_add_plane.html")
 
-        with db_cursor() as cur:
-            cur.execute("""
-                INSERT INTO Plane (plane_id, plane_size, plane_manufacturer, purchase_date)
-                VALUES (%s, %s, %s, %s)
-            """, (plane_id, plane_size, plane_manufacturer, purchase_date))
+        # Validate numbers
+        try:
+            econ_rows_i = int(econ_rows)
+            econ_cols_i = int(econ_cols)
+            if econ_rows_i <= 0 or econ_cols_i <= 0:
+                raise ValueError()
+        except ValueError:
+            flash("Economy rows/columns must be positive integers.", "error")
+            return render_template("admin_add_plane.html")
 
-        flash("Plane added successfully.", "success")
-        return redirect(url_for("admin_flights"))
+        if has_business:
+            if not bus_rows or not bus_cols:
+                flash("If the plane has Business, please enter Business rows and columns.", "error")
+                return render_template("admin_add_plane.html")
+            try:
+                bus_rows_i = int(bus_rows)
+                bus_cols_i = int(bus_cols)
+                if bus_rows_i <= 0 or bus_cols_i <= 0:
+                    raise ValueError()
+            except ValueError:
+                flash("Business rows/columns must be positive integers.", "error")
+                return render_template("admin_add_plane.html")
+
+        try:
+            with db_cursor() as cur:
+                # prevent duplicates
+                cur.execute("SELECT 1 FROM Plane WHERE plane_id = %s", (plane_id,))
+                if cur.fetchone():
+                    flash("Plane ID already exists.", "error")
+                    return render_template("admin_add_plane.html")
+
+                # 1) insert plane
+                cur.execute("""
+                    INSERT INTO Plane (plane_id, plane_size, plane_manufacturer, purchase_date)
+                    VALUES (%s, %s, %s, %s)
+                """, (plane_id, plane_size, plane_manufacturer, purchase_date))
+
+                # 2) insert cabin layouts (compatible with Cabin_class schema)
+                cur.execute("""
+                    INSERT INTO Cabin_class (plane_id, class_type, columns_num, rows_num)
+                    VALUES (%s, 'Economy', %s, %s)
+                """, (plane_id, econ_cols_i, econ_rows_i))
+
+                if has_business:
+                    cur.execute("""
+                        INSERT INTO Cabin_class (plane_id, class_type, columns_num, rows_num)
+                        VALUES (%s, 'Business', %s, %s)
+                    """, (plane_id, bus_cols_i, bus_rows_i))
+
+            flash("Plane + cabin layouts added successfully.", "success")
+            return redirect(url_for("admin_flights"))
+
+        except mysql.connector.Error as e:
+            flash(f"Database error: {e.msg}", "error")
+            return render_template("admin_add_plane.html")
 
     return render_template("admin_add_plane.html")
 
