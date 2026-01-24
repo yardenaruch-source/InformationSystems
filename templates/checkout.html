@@ -2,13 +2,14 @@
 {% block title %}Checkout{% endblock %}
 
 {% block content %}
-<section class="card">
+<section class="board">
   <h2>Checkout</h2>
 
   <p>
     <b>Order:</b> {{ order.order_id }}<br>
     <b>Flight:</b> {{ order.origin_airport }} → {{ order.destination_airport }}<br>
-    <b>Date:</b> {{ order.takeoff_date }} {{ order.takeoff_time }}<br>
+    <b>Takeoff:</b> {{ order.takeoff_date }} {{ order.takeoff_time[:5] }}<br>
+    <b>Landing:</b> {{ order.landing_date }} {{ order.landing_time[:5] }}<br>
     <b>Status:</b> {{ order.order_status }}
   </p>
 
@@ -19,12 +20,12 @@
     {% endfor %}
   </ul>
 
-  <h3>Total: ₪{{ total }}</h3>
+  <h3>Total: {{ total }} ₪</h3>
 
   {% if order.order_status == 'Pending' %}
     <p class="muted" style="margin-top:10px;">
-    ⏳ Your seats are reserved for <b>15 minutes</b>.
-    If you don’t complete payment in time, the reservation will be cancelled automatically.
+    Your seats are reserved for <b>15 minutes</b>.
+    If you don’t confirm the order in time, the reservation will be cancelled automatically.
     </p>
 
     <form method="post" style="margin-top:12px;">

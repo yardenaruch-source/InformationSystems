@@ -40,8 +40,10 @@
           <th>Flight No.</th>
           <th>From City</th>
           <th>To City</th>
-          <th>Date</th>
-          <th>Time</th>
+          <th>Takeoff Date</th>
+          <th>Takeoff Time</th>
+          <th>Landing Date</th>
+          <th>Landing Time</th>
           <th>From Price</th>
           <th>Book</th>
         </tr>
@@ -55,7 +57,9 @@
             <td>{{ f.origin_airport }}</td>
             <td>{{ f.destination_airport }}</td>
             <td>{{ f.takeoff_date }}</td>
-            <td>{{ f.takeoff_time }}</td>
+            <td>{{ f.takeoff_time[:5] }}</td>
+            <td>{{ f.landing_date }}</td>
+            <td>{{ f.landing_time[:5] }}</td>
             <td>₪{{ f.from_price }}</td>
             <td>
               {% if session.get('user_email') %}
@@ -74,7 +78,7 @@
           {% endfor %}
         {% else %}
           <tr>
-            <td colspan="7" class="empty-row">No flights found. Try searching.</td>
+            <td colspan="9" class="empty-row">No flights found. Try searching.</td>
           </tr>
         {% endif %}
       </tbody>

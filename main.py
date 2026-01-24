@@ -250,6 +250,8 @@ def book():
               f.takeoff_time,
               r.origin_airport,
               r.destination_airport,
+              DATE(DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)) AS landing_date,
+              TIME(DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)) AS landing_time,
               MIN(p.price) AS from_price
             FROM Flight f
             JOIN Flight_route r ON r.route_id = f.route_id
@@ -259,6 +261,7 @@ def book():
              AND p.class_type = 'Economy'
             WHERE f.flight_status = 'Scheduled'
         """
+
         params = []
 
         # apply filters only if user chose them
@@ -755,13 +758,17 @@ def checkout(order_id):
     with db_cursor() as cur:
         cur.execute("""
             SELECT o.order_id, o.flight_id, o.date_of_purchase, o.order_status,
-                   f.takeoff_date, f.takeoff_time, r.origin_airport, r.destination_airport
+                   f.takeoff_date, f.takeoff_time,
+                   r.origin_airport, r.destination_airport,
+                   DATE(DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)) AS landing_date,
+                   TIME(DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)) AS landing_time
             FROM Orders o
             JOIN Flight f ON f.flight_id = o.flight_id
             JOIN Flight_route r ON r.route_id = f.route_id
             WHERE o.order_id = %s
         """, (order_id,))
         order = cur.fetchone()
+
         if not order:
             flash("Order not found.", "error")
             return redirect(url_for("home"))
@@ -948,6 +955,8 @@ def admin_flights():
             SELECT
               f.flight_id, f.takeoff_date, f.takeoff_time, f.flight_status,
               r.origin_airport, r.destination_airport,
+              DATE(DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)) AS landing_date,
+              TIME(DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)) AS landing_time,
               f.plane_id, f.manager_id
             FROM Flight f
             JOIN Flight_route r ON r.route_id = f.route_id
@@ -955,6 +964,7 @@ def admin_flights():
             ORDER BY f.takeoff_date DESC, f.takeoff_time DESC
             LIMIT 200
         """.format(where_sql=where_sql), tuple(params))
+
         flights = cur.fetchall()
 
     return render_template(

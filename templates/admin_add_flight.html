@@ -11,7 +11,7 @@
     <input class="field-input" name="flight_id" placeholder="e.g. F1234" required>
 
     <label class="field-label">Route</label>
-    <select class="field-input" name="route_id" required>
+    <select class="field-input" name="route_id" id="route_id" required>
       {% for r in routes %}
         <option value="{{ r.route_id }}">{{ r.route_id }} — {{ r.origin_airport }} → {{ r.destination_airport }}</option>
       {% endfor %}
@@ -33,13 +33,16 @@
            readonly>
     <input type="hidden" name="manager_id" value="{{ logged_admin.employee_id }}">
 
-    <input type="hidden" name="manager_id" value="{{ logged_admin.employee_id }}">
-
     <label class="field-label">Takeoff Date</label>
-    <input class="field-input" type="date" name="takeoff_date" required>
+    <input class="field-input" type="date" name="takeoff_date" id="takeoff_date" required>
 
     <label class="field-label">Takeoff Time</label>
-    <input class="field-input" type="time" name="takeoff_time" required>
+    <input class="field-input" type="time" name="takeoff_time" id="takeoff_time" required>
+
+    <div class="field">
+      <label>Landing (auto)</label>
+      <div id="landingPreview" class="muted">Select route + takeoff date + takeoff time</div>
+    </div>
 
     <hr style="margin:18px 0; opacity:0.35;">
 
@@ -83,6 +86,37 @@ document.addEventListener("DOMContentLoaded", () => {
   const planeSelect = document.querySelector('select[name="plane_id"]');
   const routeSelect = document.querySelector('select[name="route_id"]');
 
+  const dateEl = document.getElementById("takeoff_date");
+  const timeEl = document.getElementById("takeoff_time");
+  const landingOut = document.getElementById("landingPreview");
+
+  function pad2(n) { return String(n).padStart(2, "0"); }
+
+  function updateLanding() {
+    if (!routeSelect || !dateEl || !timeEl || !landingOut) return;
+
+    const rid = routeSelect.value;          // string
+    const minutes = routeMap?.[rid];
+    const dateStr = dateEl.value;           // "YYYY-MM-DD"
+    const timeStr = timeEl.value;           // "HH:MM"
+
+    if (!minutes || !dateStr || !timeStr) {
+      landingOut.textContent = "Select route + takeoff date + takeoff time";
+      return;
+    }
+
+    const [Y, M, D] = dateStr.split("-").map(Number);
+    const [h, m] = timeStr.split(":").map(Number);
+
+    const takeoff = new Date(Y, M - 1, D, h, m, 0);
+    const landing = new Date(takeoff.getTime() + Number(minutes) * 60000);
+
+    const landingDate = `${landing.getFullYear()}-${pad2(landing.getMonth() + 1)}-${pad2(landing.getDate())}`;
+    const landingTime = `${pad2(landing.getHours())}:${pad2(landing.getMinutes())}`;
+
+    landingOut.textContent = `${landingDate} ${landingTime} (duration: ${minutes} min)`;
+  }
+
   function setVal(id, val) {
     const el = document.getElementById(id);
     if (el) el.value = (val ?? "-");
@@ -103,7 +137,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!routeSelect) return;
     const rid = routeSelect.value;     // string
     setVal("flight_duration", routeMap?.[rid]);
+    updateLanding();                   // ✅ add this
   }
+
 
   if (planeSelect) {
     planeSelect.addEventListener("change", updateLayout);
@@ -114,6 +150,14 @@ document.addEventListener("DOMContentLoaded", () => {
     routeSelect.addEventListener("change", updateDuration);
     updateDuration();
   }
+
+  if (dateEl) dateEl.addEventListener("change", updateLanding);
+  if (timeEl) {
+    timeEl.addEventListener("change", updateLanding);
+    timeEl.addEventListener("input", updateLanding);
+  }
+  updateLanding();
+
 });
 </script>
 
