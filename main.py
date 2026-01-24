@@ -1168,6 +1168,8 @@ def admin_add_flight():
                     VALUES (%s, %s, 'Business', %s)
                 """, (flight_id, plane_id, float(bus_price)))
 
+                cur.execute("DELETE FROM Seat WHERE flight_id = %s", (flight_id,))
+
                 # 4) Insert seats (include plane_id because FK)
                 for r in range(1, econ_rows + 1):
                     for c in range(1, econ_cols + 1):
