@@ -3,6 +3,16 @@
 
 {% block content %}
 <section class="board admin-box">
+    <div class="card admin-actions-box">
+    <div class="admin-actions">
+      <a class="btn" href="{{ url_for('admin_add_plane') }}">+ Add Plane</a>
+      <a class="btn" href="{{ url_for('admin_add_route') }}">+ Add Route</a>
+      <a class="btn" href="{{ url_for('admin_add_flight') }}">+ Add Flight</a>
+    </div>
+  </div>
+</section>
+
+<section class="board admin-box">
   <h1 style="text-align:center;">Flights</h1>
 
   <!-- Filter form (login-like spacing) -->
