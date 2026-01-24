@@ -1002,6 +1002,14 @@ def admin_flights():
 
         flights = cur.fetchall()
 
+    now = datetime.now()
+    for f in flights:
+        # takeoff_time from MySQL might be a timedelta or time; normalize_time handles it in your project
+        takeoff_t = normalize_time(f["takeoff_time"])
+        takeoff_dt = datetime.combine(f["takeoff_date"], takeoff_t)
+
+        f["can_cancel_72h"] = (takeoff_dt - now) >= timedelta(hours=72)
+
     return render_template(
         "admin_flights.html",
         flights=flights,
@@ -1465,24 +1473,96 @@ def admin_cancel_flight(flight_id):
         return redirect(url_for("admin_login"))
 
     flight_id = flight_id.strip().upper()
+    admin_id = session.get("admin_employee_id")
 
     with db_cursor() as cur:
-        cur.execute("SELECT flight_status FROM Flight WHERE flight_id = %s", (flight_id,))
-        row = cur.fetchone()
-        if not row:
+        # 1) Fetch flight details
+        cur.execute("""
+            SELECT flight_status, takeoff_date, takeoff_time, manager_id
+            FROM Flight
+            WHERE flight_id = %s
+        """, (flight_id,))
+        flight = cur.fetchone()
+
+        if not flight:
             flash("Flight not found.", "error")
             return redirect(url_for("admin_flights"))
 
-        if row["flight_status"] not in ("Scheduled", "Full"):
+        # Only the assigned manager can cancel
+        if str(flight["manager_id"]) != str(admin_id):
+            flash("You can cancel only flights assigned to you.", "error")
+            return redirect(url_for("admin_flights"))
+
+        if flight["flight_status"] not in ("Scheduled", "Full"):
             flash("Only Scheduled/Full flights can be cancelled.", "error")
             return redirect(url_for("admin_flights"))
 
+        # 2) 72h rule
+        takeoff_t = normalize_time(flight["takeoff_time"])
+        takeoff_dt = datetime.combine(flight["takeoff_date"], takeoff_t)
+        if takeoff_dt - datetime.now() < timedelta(hours=72):
+            flash("Too late to cancel: you can cancel only 72+ hours before takeoff.", "error")
+            return redirect(url_for("admin_flights"))
+
+        # 3) Mark flight cancelled
         cur.execute("""
             UPDATE Flight
             SET flight_status = 'Cancelled'
             WHERE flight_id = %s
         """, (flight_id,))
-        flash("Flight cancelled.", "success")
+
+        # 4) Refund ALL paid orders (Active) in one shot
+        # Compute totals per order_id from Seat + Flight_Class_Pricing
+        cur.execute("""
+            SELECT
+              o.order_id,
+              COALESCE(SUM(fcp.price), 0) AS total
+            FROM Orders o
+            LEFT JOIN Seat s
+              ON s.order_id = o.order_id
+            LEFT JOIN Flight_Class_Pricing fcp
+              ON fcp.flight_id  = s.flight_id
+             AND fcp.plane_id   = s.plane_id
+             AND fcp.class_type = s.class_type
+            WHERE o.flight_id = %s
+              AND o.order_status = 'Active'
+            GROUP BY o.order_id
+        """, (flight_id,))
+        paid_orders = cur.fetchall()  # list of {order_id, total}
+
+        refunded_orders_count = len(paid_orders)
+        total_refunded = sum(float(r["total"] or 0) for r in paid_orders)
+
+        # Cancel paid orders
+        cur.execute("""
+            UPDATE Orders
+            SET order_status = 'Cancelled by system'
+            WHERE flight_id = %s
+              AND order_status = 'Active'
+        """, (flight_id,))
+
+        # 5) Cancel pending reservations too (no "refund", but release seats)
+        cur.execute("""
+            UPDATE Orders
+            SET order_status = 'Cancelled by system'
+            WHERE flight_id = %s
+              AND order_status = 'Pending'
+        """, (flight_id,))
+
+        # 6) Release seats for ANY order on this flight (paid/pending/whatever)
+        # This prevents "stuck" seats.
+        cur.execute("""
+            UPDATE Seat s
+            JOIN Orders o ON o.order_id = s.order_id
+            SET s.order_id = NULL
+            WHERE o.flight_id = %s
+        """, (flight_id,))
+
+        flash(
+            f"Flight {flight_id} cancelled. "
+            f"Refunded {refunded_orders_count} paid order(s), total ₪{total_refunded:.2f}.",
+            "success"
+        )
 
     return redirect(url_for("admin_flights"))
 
