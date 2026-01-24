@@ -2,10 +2,10 @@
 {% block title %}Checkout{% endblock %}
 
 {% block content %}
-<section class="board">
-  <h2>Checkout</h2>
+<section class="board narrow-board" style="text-align:center;">
+  <h2 >Checkout</h2>
 
-  <p>
+  <p style="line-height:1.7;">
     <b>Order:</b> {{ order.order_id }}<br>
     <b>Flight:</b> {{ order.origin_airport }} → {{ order.destination_airport }}<br>
     <b>Takeoff:</b> {{ order.takeoff_date }} {{ order.takeoff_time }}<br>
@@ -14,7 +14,7 @@
   </p>
 
   <h3>Seats</h3>
-  <ul>
+  <ul style="list-style-position: inside; padding:0; margin:0 auto; display:inline-block; text-align:left;">
     {% for s in seats %}
       <li>{{ s.class_type }} — Row {{ s.s_row }}, Col {{ s.s_column }}</li>
     {% endfor %}
@@ -29,7 +29,7 @@
     </p>
 
     <form method="post" style="margin-top:12px;">
-     <button class="btn" type="submit">Pay & Confirm</button>
+     <button class="btn" type="submit">Confirm order</button>
     </form>
   {% endif %}
 
