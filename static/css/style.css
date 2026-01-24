@@ -313,6 +313,13 @@ main.container{
   width: min(420px, 92vw);
 }
 
+/* Make multi-select crew boxes squared (only these) */
+.board select[multiple]{
+  border-radius: 10px;   /* squared but still nice */
+  height: auto;
+  padding: 10px 14px;
+}
+
 .board h1{
   text-align: center;
 }
