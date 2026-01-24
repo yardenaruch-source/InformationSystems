@@ -637,6 +637,12 @@ main.container{
   color: rgba(0,0,0,0.45);
 }
 
+/* Keep legend text on the same line as the swatch */
+.seats-page .seats-legend .legend-item > span:last-child{
+  display: inline-block;
+  white-space: nowrap;
+}
+
 /* ---- Seat map container (tight fit) ---- */
 .seats-page .seats-wrap{
   width: fit-content;
