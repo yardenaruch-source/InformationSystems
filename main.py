@@ -1108,11 +1108,15 @@ def admin_add_flight():
     if not session.get("admin_employee_id"):
         return redirect(url_for("admin_login"))
 
-    # GET dropdown data
+    # -------------------------
+    # GET dropdown data + maps
+    # -------------------------
     with db_cursor() as cur:
+        # Planes dropdown
         cur.execute("SELECT plane_id FROM Plane ORDER BY plane_id")
         planes = [r["plane_id"] for r in cur.fetchall()]
 
+        # Routes dropdown (+ durations)
         cur.execute("""
             SELECT route_id, origin_airport, destination_airport, flight_duration
             FROM Flight_route
@@ -1120,6 +1124,7 @@ def admin_add_flight():
         """)
         routes = cur.fetchall()
 
+        # Logged-in admin details
         admin_id = session.get("admin_employee_id")
         cur.execute("""
             SELECT employee_id, employee_first_name, employee_last_name
@@ -1133,43 +1138,48 @@ def admin_add_flight():
             session.pop("admin_employee_id", None)
             return redirect(url_for("admin_login"))
 
-        # cabin layouts per plane/class
+        # Cabin layouts for layout_map
         cur.execute("""
             SELECT plane_id, class_type, rows_num, columns_num
             FROM Cabin_class
         """)
         cc = cur.fetchall()
 
-        # crew lists
+        # ALL crew for checkboxes (we'll filter for long flights in POST)
         cur.execute("""
             SELECT employee_id, employee_first_name, employee_last_name, long_flight_training
             FROM Pilot
             ORDER BY employee_first_name, employee_last_name
         """)
-        pilots = cur.fetchall()
+        all_pilots = cur.fetchall()
 
         cur.execute("""
             SELECT employee_id, employee_first_name, employee_last_name, long_flight_training
             FROM Flight_attendant
             ORDER BY employee_first_name, employee_last_name
         """)
-        attendants = cur.fetchall()
+        all_attendants = cur.fetchall()
 
+    # Build layout_map: {plane_id: {class_type: {rows, cols}}}
     layout_map = {}
     for x in cc:
         pid = x["plane_id"]
         layout_map.setdefault(pid, {})
         layout_map[pid][x["class_type"]] = {
             "rows": int(x["rows_num"]),
-            "cols": int(x["columns_num"]),
+            "cols": int(x["columns_num"])
         }
 
+    # Build route_map: {route_id(str): duration(int minutes)}
     route_map = {str(r["route_id"]): int(r["flight_duration"]) for r in routes}
 
+    # -------------------------
+    # POST: create flight
+    # -------------------------
     if request.method == "POST":
         flight_id = request.form.get("flight_id", "").strip().upper()
-        route_id  = request.form.get("route_id", "").strip()
-        plane_id  = request.form.get("plane_id", "").strip().upper()
+        route_id = request.form.get("route_id", "").strip()          # keep as string
+        plane_id = request.form.get("plane_id", "").strip().upper()
         manager_id = session.get("admin_employee_id")
         takeoff_date = request.form.get("takeoff_date", "").strip()
         takeoff_time = request.form.get("takeoff_time", "").strip()
@@ -1177,98 +1187,38 @@ def admin_add_flight():
         econ_price = request.form.get("econ_price", "").strip()
         bus_price  = request.form.get("bus_price", "").strip()
 
-        selected_pilots = request.form.getlist("pilot_ids")
-        selected_attendants = request.form.getlist("attendant_ids")
+        # ✅ checkbox lists (NO CTRL needed)
+        pilot_ids = request.form.getlist("pilot_ids")
+        attendant_ids = request.form.getlist("attendant_ids")
 
-        # basic required fields
-        if not all([flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time, econ_price, bus_price]):
-            flash("Please fill in all required fields (including prices).", "error")
+        # Basic validation
+        if not all([flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time]):
+            flash("Please fill in the required flight fields.", "error")
             return render_template(
                 "admin_add_flight.html",
-                planes=planes, routes=routes, layout_map=layout_map, route_map=route_map,
-                logged_admin=logged_admin, pilots=pilots, attendants=attendants
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                logged_admin=logged_admin,
+                pilots=all_pilots, attendants=all_attendants
             )
 
-        # duration -> long or short
-        duration = route_map.get(str(route_id))
-        if not duration:
-            flash("Invalid route selection.", "error")
+        if not econ_price or not bus_price:
+            flash("Please enter Economy and Business prices.", "error")
             return render_template(
                 "admin_add_flight.html",
-                planes=planes, routes=routes, layout_map=layout_map, route_map=route_map,
-                logged_admin=logged_admin, pilots=pilots, attendants=attendants
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                logged_admin=logged_admin,
+                pilots=all_pilots, attendants=all_attendants
             )
 
-        is_long = duration > 360
-        req_pilots = 3 if is_long else 2
-        req_atts   = 6 if is_long else 3
+        # Determine long-flight rule (example: > 6 hours)
+        duration_minutes = route_map.get(str(route_id))
+        is_long_flight = bool(duration_minutes and int(duration_minutes) > 360)
 
-        # count validation
-        if len(selected_pilots) != req_pilots:
-            flash(f"You must select exactly {req_pilots} pilots for this flight.", "error")
-            return render_template(
-                "admin_add_flight.html",
-                planes=planes, routes=routes, layout_map=layout_map, route_map=route_map,
-                logged_admin=logged_admin, pilots=pilots, attendants=attendants
-            )
-
-        if len(selected_attendants) != req_atts:
-            flash(f"You must select exactly {req_atts} flight attendants for this flight.", "error")
-            return render_template(
-                "admin_add_flight.html",
-                planes=planes, routes=routes, layout_map=layout_map, route_map=route_map,
-                logged_admin=logged_admin, pilots=pilots, attendants=attendants
-            )
-
-        # enforce long-training on server too (cannot bypass JS)
         try:
             with db_cursor() as cur:
-                # prevent duplicate flight id
-                cur.execute("SELECT 1 FROM Flight WHERE flight_id = %s", (flight_id,))
-                if cur.fetchone():
-                    flash("Flight ID already exists. Choose a different ID.", "error")
-                    return render_template(
-                        "admin_add_flight.html",
-                        planes=planes, routes=routes, layout_map=layout_map, route_map=route_map,
-                        logged_admin=logged_admin, pilots=pilots, attendants=attendants
-                    )
-
-                if is_long:
-                    # pilots must be long-trained
-                    placeholders = ",".join(["%s"] * len(selected_pilots))
-                    cur.execute(f"""
-                        SELECT employee_id
-                        FROM Pilot
-                        WHERE employee_id IN ({placeholders})
-                          AND long_flight_training = 1
-                    """, tuple(selected_pilots))
-                    ok_p = {r["employee_id"] for r in cur.fetchall()}
-                    if len(ok_p) != len(selected_pilots):
-                        flash("Long flight: all selected pilots must have long flight training.", "error")
-                        return render_template(
-                            "admin_add_flight.html",
-                            planes=planes, routes=routes, layout_map=layout_map, route_map=route_map,
-                            logged_admin=logged_admin, pilots=pilots, attendants=attendants
-                        )
-
-                    # attendants must be long-trained
-                    placeholders = ",".join(["%s"] * len(selected_attendants))
-                    cur.execute(f"""
-                        SELECT employee_id
-                        FROM Flight_attendant
-                        WHERE employee_id IN ({placeholders})
-                          AND long_flight_training = 1
-                    """, tuple(selected_attendants))
-                    ok_a = {r["employee_id"] for r in cur.fetchall()}
-                    if len(ok_a) != len(selected_attendants):
-                        flash("Long flight: all selected attendants must have long flight training.", "error")
-                        return render_template(
-                            "admin_add_flight.html",
-                            planes=planes, routes=routes, layout_map=layout_map, route_map=route_map,
-                            logged_admin=logged_admin, pilots=pilots, attendants=attendants
-                        )
-
-                # layout from Cabin_class
+                # 1) Get layout from Cabin_class for selected plane
                 cur.execute("""
                     SELECT class_type, rows_num, columns_num
                     FROM Cabin_class
@@ -1281,20 +1231,70 @@ def admin_add_flight():
                     flash("This plane is missing cabin layout (Economy/Business) in Cabin_class.", "error")
                     return render_template(
                         "admin_add_flight.html",
-                        planes=planes, routes=routes, layout_map=layout_map, route_map=route_map,
-                        logged_admin=logged_admin, pilots=pilots, attendants=attendants
+                        planes=planes, routes=routes,
+                        layout_map=layout_map, route_map=route_map,
+                        logged_admin=logged_admin,
+                        pilots=all_pilots, attendants=all_attendants
                     )
 
                 econ_rows, econ_cols = layout["Economy"]
-                bus_rows,  bus_cols  = layout["Business"]
+                bus_rows, bus_cols = layout["Business"]
 
-                # 1) insert flight
+                # 2) ✅ Long-flight training enforcement (server-side, cannot be bypassed)
+                if is_long_flight:
+                    if not pilot_ids or not attendant_ids:
+                        flash("Long flights require selecting trained pilots and attendants.", "error")
+                        return render_template(
+                            "admin_add_flight.html",
+                            planes=planes, routes=routes,
+                            layout_map=layout_map, route_map=route_map,
+                            logged_admin=logged_admin,
+                            pilots=all_pilots, attendants=all_attendants
+                        )
+
+                    # Only allow long-trained pilots
+                    for pid in pilot_ids:
+                        cur.execute("""
+                            SELECT long_flight_training
+                            FROM Pilot
+                            WHERE employee_id = %s
+                        """, (pid,))
+                        row = cur.fetchone()
+                        if not row or int(row["long_flight_training"]) != 1:
+                            flash("Selected pilot is not long-flight trained.", "error")
+                            return render_template(
+                                "admin_add_flight.html",
+                                planes=planes, routes=routes,
+                                layout_map=layout_map, route_map=route_map,
+                                logged_admin=logged_admin,
+                                pilots=all_pilots, attendants=all_attendants
+                            )
+
+                    # Only allow long-trained attendants
+                    for aid in attendant_ids:
+                        cur.execute("""
+                            SELECT long_flight_training
+                            FROM Flight_attendant
+                            WHERE employee_id = %s
+                        """, (aid,))
+                        row = cur.fetchone()
+                        if not row or int(row["long_flight_training"]) != 1:
+                            flash("Selected attendant is not long-flight trained.", "error")
+                            return render_template(
+                                "admin_add_flight.html",
+                                planes=planes, routes=routes,
+                                layout_map=layout_map, route_map=route_map,
+                                logged_admin=logged_admin,
+                                pilots=all_pilots, attendants=all_attendants
+                            )
+
+                # 3) Insert Flight
                 cur.execute("""
                     INSERT INTO Flight (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time, flight_status)
                     VALUES (%s, %s, %s, %s, %s, %s, 'Scheduled')
                 """, (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time))
 
-                # 2) prices
+                # 4) Insert prices into Flight_Class_Pricing
                 cur.execute("""
                     INSERT INTO Flight_Class_Pricing (flight_id, plane_id, class_type, price)
                     VALUES (%s, %s, 'Economy', %s)
@@ -1305,61 +1305,68 @@ def admin_add_flight():
                     VALUES (%s, %s, 'Business', %s)
                 """, (flight_id, plane_id, float(bus_price)))
 
-                # 3) crew link tables
-                for pid in selected_pilots:
-                    cur.execute("""
-                        INSERT INTO Pilots_in_flights (flight_id, employee_id)
-                        VALUES (%s, %s)
-                    """, (flight_id, pid))
+                # ✅ 5) Prevent duplicate seat PK errors:
+                # if flight_id exists with seats already (or retry), delete seats first
+                cur.execute("DELETE FROM Seat WHERE flight_id = %s", (flight_id,))
 
-                for aid in selected_attendants:
-                    cur.execute("""
-                        INSERT INTO Flight_attendants_in_flights (flight_id, employee_id)
-                        VALUES (%s, %s)
-                    """, (flight_id, aid))
-
-                # 4) seats
-                # IMPORTANT: if Seat PK is (flight_id, s_row, s_column) WITHOUT class_type,
-                # then economy and business cannot both start at row=1 col=1.
-                # Solution: make economy rows continue after business rows.
-                business_row_offset = 0
-                economy_row_offset  = bus_rows  # economy starts after business
-
-                # Business seats: rows 1..bus_rows
-                for r in range(1, bus_rows + 1):
-                    for c in range(1, bus_cols + 1):
-                        cur.execute("""
-                            INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
-                            VALUES (%s, %s, %s, %s, 'Business', NULL)
-                        """, (flight_id, r + business_row_offset, c, plane_id))
-
-                # Economy seats: rows (bus_rows+1)..(bus_rows+econ_rows)
+                # 6) Insert seats (include plane_id because FK)
                 for r in range(1, econ_rows + 1):
                     for c in range(1, econ_cols + 1):
                         cur.execute("""
                             INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
                             VALUES (%s, %s, %s, %s, 'Economy', NULL)
-                        """, (flight_id, r + economy_row_offset, c, plane_id))
+                        """, (flight_id, r, c, plane_id))
 
-            flash("Flight created successfully.", "success")
-            return redirect(url_for("admin_flights"))
+                for r in range(1, bus_rows + 1):
+                    for c in range(1, bus_cols + 1):
+                        cur.execute("""
+                            INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
+                            VALUES (%s, %s, %s, %s, 'Business', NULL)
+                        """, (flight_id, r, c, plane_id))
+
+                # 7) Insert crew selections into join tables
+                # (If your DB has ON DELETE CASCADE, optional cleanup isn't needed.
+                #  But for safety if flight_id reused, you can clear first.)
+                cur.execute("DELETE FROM Pilots_in_flights WHERE flight_id = %s", (flight_id,))
+                cur.execute("DELETE FROM Flight_attendants_in_flights WHERE flight_id = %s", (flight_id,))
+
+                for pid in pilot_ids:
+                    cur.execute("""
+                        INSERT INTO Pilots_in_flights (flight_id, employee_id)
+                        VALUES (%s, %s)
+                    """, (flight_id, pid))
+
+                for aid in attendant_ids:
+                    cur.execute("""
+                        INSERT INTO Flight_attendants_in_flights (flight_id, employee_id)
+                        VALUES (%s, %s)
+                    """, (flight_id, aid))
 
         except mysql.connector.Error as e:
             flash(f"Database error: {e.msg}", "error")
             return render_template(
                 "admin_add_flight.html",
-                planes=planes, routes=routes, layout_map=layout_map, route_map=route_map,
-                logged_admin=logged_admin, pilots=pilots, attendants=attendants
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                logged_admin=logged_admin,
+                pilots=all_pilots, attendants=all_attendants
             )
         except Exception:
-            flash("Failed to create flight. Please try again.", "error")
+            flash("Something went wrong while creating the flight.", "error")
             return render_template(
                 "admin_add_flight.html",
-                planes=planes, routes=routes, layout_map=layout_map, route_map=route_map,
-                logged_admin=logged_admin, pilots=pilots, attendants=attendants
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                logged_admin=logged_admin,
+                pilots=all_pilots, attendants=all_attendants
             )
 
-    # GET
+        flash("Flight created successfully.", "success")
+        return redirect(url_for("admin_flights"))
+
+    # -------------------------
+    # GET: render page
+    # -------------------------
     return render_template(
         "admin_add_flight.html",
         planes=planes,
@@ -1367,8 +1374,8 @@ def admin_add_flight():
         layout_map=layout_map,
         route_map=route_map,
         logged_admin=logged_admin,
-        pilots=pilots,
-        attendants=attendants
+        pilots=all_pilots,
+        attendants=all_attendants
     )
 
 @app.route("/admin/flights/cancel/<flight_id>", methods=["POST"])
