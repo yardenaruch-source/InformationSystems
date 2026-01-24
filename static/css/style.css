@@ -486,8 +486,8 @@ main.container{
 /* ---- Page layout (left info + right seat map) ---- */
 .seats-page .seats-layout{
   display: grid;
-  grid-template-columns: 420px 1fr;
-  gap: 8px;
+  grid-template-columns: 360px 1fr;
+  gap: 6px;
   align-items: start;
   max-width: 1000px;
   margin: 8px auto;
@@ -569,17 +569,23 @@ main.container{
   padding-top: 14px;
 }
 
-/* ---- Legend box ---- */
+/* ---- Legend box (aligned rows) ---- */
+
+/* Each legend row = 2 columns: [icon] [text] */
 .seats-page .legend-item{
-  display: flex;
+  display: grid;
+  grid-template-columns: 30px auto; /* fixed icon column -> straight alignment */
   align-items: center;
-  gap: 10px;
-  justify-content: center;
-  margin: 10px 0;
+  justify-content: start;           /* left-align inside the legend box */
+  gap: 12px;
+
+  width: fit-content;              /* keeps it compact */
+  margin: 10px auto;               /* centers the compact legend block */
   color: #051c2e;
   font-weight: 700;
 }
 
+/* All icons same size + centered content */
 .seats-page .legend-swatch{
   width: 26px;
   height: 26px;
@@ -588,6 +594,7 @@ main.container{
   align-items: center;
   justify-content: center;
   font-weight: 900;
+  line-height: 1;                  /* helps the X sit centered */
 }
 
 /* Available swatch */
