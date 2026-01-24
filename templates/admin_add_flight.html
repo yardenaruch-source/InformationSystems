@@ -40,8 +40,7 @@
     <input class="field-input" type="time" name="takeoff_time" id="takeoff_time" required>
 
     <div class="field">
-      <label>Landing (auto)</label>
-      <div id="landingPreview" class="muted">Select route + takeoff date + takeoff time</div>
+      <label>Landing</label>
     </div>
 
     <hr style="margin:18px 0; opacity:0.35;">
@@ -139,7 +138,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setVal("flight_duration", routeMap?.[rid]);
     updateLanding();                   // ✅ add this
   }
-
 
   if (planeSelect) {
     planeSelect.addEventListener("change", updateLayout);
