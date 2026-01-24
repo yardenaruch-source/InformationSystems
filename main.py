@@ -1008,7 +1008,6 @@ def admin_flights():
         filters={"flight_id": flight_id, "status": status, "takeoff_date": takeoff_date},
     )
 
-
 @app.route("/admin/add/plane", methods=["GET", "POST"])
 def admin_add_plane():
     if not session.get("admin_employee_id"):
@@ -1062,25 +1061,71 @@ def admin_add_route():
 
     return render_template("admin_add_route.html")
 
+def has_plane_conflict(cur, plane_id, new_start_dt, new_end_dt):
+    """
+    Returns True if the plane is already used in an overlapping flight window.
+    Considers Scheduled/Full flights only.
+    """
+    cur.execute("""
+        SELECT 1
+        FROM Flight f
+        JOIN Flight_route r ON r.route_id = f.route_id
+        WHERE f.plane_id = %s
+          AND f.flight_status IN ('Scheduled', 'Full')
+          AND (
+            %s < DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)
+            AND
+            %s > TIMESTAMP(f.takeoff_date, f.takeoff_time)
+          )
+        LIMIT 1
+    """, (plane_id, new_start_dt, new_end_dt))
+    return cur.fetchone() is not None
+
+
+def has_employee_conflict(cur, link_table, employee_id, new_start_dt, new_end_dt):
+    """
+    link_table: 'Pilots_in_flights' or 'Flight_attendants_in_flights'
+    Returns True if employee has an overlapping flight window.
+    """
+    cur.execute(f"""
+        SELECT 1
+        FROM {link_table} lf
+        JOIN Flight f ON f.flight_id = lf.flight_id
+        JOIN Flight_route r ON r.route_id = f.route_id
+        WHERE lf.employee_id = %s
+          AND f.flight_status IN ('Scheduled', 'Full')
+          AND (
+            %s < DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)
+            AND
+            %s > TIMESTAMP(f.takeoff_date, f.takeoff_time)
+          )
+        LIMIT 1
+    """, (employee_id, new_start_dt, new_end_dt))
+    return cur.fetchone() is not None
 
 @app.route("/admin/add/flights", methods=["GET", "POST"])
 def admin_add_flight():
     if not session.get("admin_employee_id"):
         return redirect(url_for("admin_login"))
 
-    # GET dropdown data
+    # Load dropdown data + maps (GET AND also needed on POST error re-render)
     with db_cursor() as cur:
-        cur.execute("SELECT plane_id FROM Plane ORDER BY plane_id")
-        planes = [r["plane_id"] for r in cur.fetchall()]
+        # Planes list
+        cur.execute("SELECT plane_id, plane_size FROM Plane ORDER BY plane_id")
+        plane_rows = cur.fetchall()
+        planes = [r["plane_id"] for r in plane_rows]
+        plane_size_map = {r["plane_id"]: r["plane_size"] for r in plane_rows}
 
+        # Routes list + route duration map
         cur.execute("""
             SELECT route_id, origin_airport, destination_airport, flight_duration
             FROM Flight_route
             ORDER BY route_id
         """)
         routes = cur.fetchall()
+        route_map = {str(r["route_id"]): int(r["flight_duration"]) for r in routes}
 
-        # ✅ ADD HERE: fetch the logged-in admin details (from session)
+        # Logged in admin info
         admin_id = session.get("admin_employee_id")
         cur.execute("""
             SELECT employee_id, employee_first_name, employee_last_name
@@ -1094,24 +1139,38 @@ def admin_add_flight():
             session.pop("admin_employee_id", None)
             return redirect(url_for("admin_login"))
 
-        # ✅ add this:
+        # Cabin layouts (rows/cols per plane + class)
         cur.execute("""
             SELECT plane_id, class_type, rows_num, columns_num
             FROM Cabin_class
         """)
         cc = cur.fetchall()
 
-    layout_map = {}
-    for x in cc:
-        pid = x["plane_id"]
-        layout_map.setdefault(pid, {})
-        layout_map[pid][x["class_type"]] = {
-            "rows": int(x["rows_num"]),
-            "cols": int(x["columns_num"])
-        }
+        layout_map = {}
+        for x in cc:
+            pid = x["plane_id"]
+            layout_map.setdefault(pid, {})
+            layout_map[pid][x["class_type"]] = {
+                "rows": int(x["rows_num"]),
+                "cols": int(x["columns_num"])
+            }
 
-    route_map = {str(r["route_id"]): int(r["flight_duration"]) for r in routes}
+        # Crew options
+        cur.execute("""
+            SELECT employee_id, employee_first_name, employee_last_name, long_flight_training
+            FROM Pilot
+            ORDER BY employee_last_name, employee_first_name
+        """)
+        pilots = cur.fetchall()
 
+        cur.execute("""
+            SELECT employee_id, employee_first_name, employee_last_name, long_flight_training
+            FROM Flight_attendant
+            ORDER BY employee_last_name, employee_first_name
+        """)
+        attendants = cur.fetchall()
+
+    # POST: create flight
     if request.method == "POST":
         flight_id = request.form.get("flight_id", "").strip().upper()
         route_id = request.form.get("route_id", "").strip()
@@ -1123,54 +1182,221 @@ def admin_add_flight():
         econ_price = request.form.get("econ_price", "").strip()
         bus_price  = request.form.get("bus_price", "").strip()
 
-        if not all([flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time]):
-            flash("Please fill in the required flight fields.", "error")
-            return render_template( "admin_add_flight.html", planes=planes, routes=routes, layout_map=layout_map, route_map=route_map, logged_admin=logged_admin)
+        selected_pilots = request.form.getlist("pilot_ids")
+        selected_attendants = request.form.getlist("attendant_ids")
 
-        # require prices (per your requirement)
-        if not econ_price or not bus_price:
-            flash("Please enter Economy and Business prices.", "error")
-            return render_template("admin_add_flight.html", planes=planes, routes=routes, layout_map=layout_map, route_map=route_map, logged_admin=logged_admin)
+        # Basic validation
+        if not all([flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time]):
+            flash("Please fill in all required flight fields.", "error")
+            return render_template(
+                "admin_add_flight.html",
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                plane_size_map=plane_size_map,
+                logged_admin=logged_admin,
+                pilots=pilots, attendants=attendants
+            )
+
+        duration = route_map.get(str(route_id))
+        if not duration:
+            flash("Invalid route selected.", "error")
+            return render_template(
+                "admin_add_flight.html",
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                plane_size_map=plane_size_map,
+                logged_admin=logged_admin,
+                pilots=pilots, attendants=attendants
+            )
+
+        # Compute time window
+        try:
+            start_dt = datetime.strptime(f"{takeoff_date} {takeoff_time}", "%Y-%m-%d %H:%M")
+        except ValueError:
+            flash("Invalid takeoff date/time.", "error")
+            return render_template(
+                "admin_add_flight.html",
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                plane_size_map=plane_size_map,
+                logged_admin=logged_admin,
+                pilots=pilots, attendants=attendants
+            )
+
+        end_dt = start_dt + timedelta(minutes=int(duration))
+
+        # Short/Long flight crew requirements
+        is_long = int(duration) > 360
+        req_pilots = 3 if is_long else 2
+        req_att = 6 if is_long else 3
+
+        if len(selected_pilots) != req_pilots:
+            flash(f"You must select exactly {req_pilots} pilots for this flight.", "error")
+            return render_template(
+                "admin_add_flight.html",
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                plane_size_map=plane_size_map,
+                logged_admin=logged_admin,
+                pilots=pilots, attendants=attendants
+            )
+
+        if len(selected_attendants) != req_att:
+            flash(f"You must select exactly {req_att} attendants for this flight.", "error")
+            return render_template(
+                "admin_add_flight.html",
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                plane_size_map=plane_size_map,
+                logged_admin=logged_admin,
+                pilots=pilots, attendants=attendants
+            )
+
+        # Determine cabin availability for this plane from Cabin_class
+        plane_layout = layout_map.get(plane_id, {})
+        has_economy = "Economy" in plane_layout
+        has_business = "Business" in plane_layout  # small planes may not have this
+
+        if not has_economy:
+            flash("This plane is missing Economy layout in Cabin_class.", "error")
+            return render_template(
+                "admin_add_flight.html",
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                plane_size_map=plane_size_map,
+                logged_admin=logged_admin,
+                pilots=pilots, attendants=attendants
+            )
+
+        # Price rules:
+        if not econ_price:
+            flash("Please enter Economy price.", "error")
+            return render_template(
+                "admin_add_flight.html",
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                plane_size_map=plane_size_map,
+                logged_admin=logged_admin,
+                pilots=pilots, attendants=attendants
+            )
+
+        if has_business and not bus_price:
+            flash("Please enter Business price (this plane supports Business).", "error")
+            return render_template(
+                "admin_add_flight.html",
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                plane_size_map=plane_size_map,
+                logged_admin=logged_admin,
+                pilots=pilots, attendants=attendants
+            )
 
         try:
             with db_cursor() as cur:
-                # 1) Get layout from Cabin_class for the selected plane
+                # 0) Block duplicate flight_id (prevents your Seat duplicate PK situation)
+                cur.execute("SELECT 1 FROM Flight WHERE flight_id = %s", (flight_id,))
+                if cur.fetchone():
+                    flash("Flight ID already exists. Please choose a new Flight ID.", "error")
+                    return render_template(
+                        "admin_add_flight.html",
+                        planes=planes, routes=routes,
+                        layout_map=layout_map, route_map=route_map,
+                        plane_size_map=plane_size_map,
+                        logged_admin=logged_admin,
+                        pilots=pilots, attendants=attendants
+                    )
+
+                # 1) Plane availability check
+                if has_plane_conflict(cur, plane_id, start_dt, end_dt):
+                    flash("This plane is not available at the selected time.", "error")
+                    return render_template(
+                        "admin_add_flight.html",
+                        planes=planes, routes=routes,
+                        layout_map=layout_map, route_map=route_map,
+                        plane_size_map=plane_size_map,
+                        logged_admin=logged_admin,
+                        pilots=pilots, attendants=attendants
+                    )
+
+                # 2) Long flight training check
+                if is_long:
+                    for pid in selected_pilots:
+                        cur.execute("SELECT long_flight_training FROM Pilot WHERE employee_id = %s", (pid,))
+                        row = cur.fetchone()
+                        if not row or int(row["long_flight_training"]) != 1:
+                            flash("All selected pilots must be trained for long flights.", "error")
+                            return render_template(
+                                "admin_add_flight.html",
+                                planes=planes, routes=routes,
+                                layout_map=layout_map, route_map=route_map,
+                                plane_size_map=plane_size_map,
+                                logged_admin=logged_admin,
+                                pilots=pilots, attendants=attendants
+                            )
+
+                    for aid in selected_attendants:
+                        cur.execute("SELECT long_flight_training FROM Flight_attendant WHERE employee_id = %s", (aid,))
+                        row = cur.fetchone()
+                        if not row or int(row["long_flight_training"]) != 1:
+                            flash("All selected attendants must be trained for long flights.", "error")
+                            return render_template(
+                                "admin_add_flight.html",
+                                planes=planes, routes=routes,
+                                layout_map=layout_map, route_map=route_map,
+                                plane_size_map=plane_size_map,
+                                logged_admin=logged_admin,
+                                pilots=pilots, attendants=attendants
+                            )
+
+                # 3) Crew availability checks (no overlaps)
+                for pid in selected_pilots:
+                    if has_employee_conflict(cur, "Pilots_in_flights", pid, start_dt, end_dt):
+                        flash(f"Pilot {pid} is not available at the selected time.", "error")
+                        return render_template(
+                            "admin_add_flight.html",
+                            planes=planes, routes=routes,
+                            layout_map=layout_map, route_map=route_map,
+                            plane_size_map=plane_size_map,
+                            logged_admin=logged_admin,
+                            pilots=pilots, attendants=attendants
+                        )
+
+                for aid in selected_attendants:
+                    if has_employee_conflict(cur, "Flight_attendants_in_flights", aid, start_dt, end_dt):
+                        flash(f"Attendant {aid} is not available at the selected time.", "error")
+                        return render_template(
+                            "admin_add_flight.html",
+                            planes=planes, routes=routes,
+                            layout_map=layout_map, route_map=route_map,
+                            plane_size_map=plane_size_map,
+                            logged_admin=logged_admin,
+                            pilots=pilots, attendants=attendants
+                        )
+
+                # 4) Insert Flight
                 cur.execute("""
-                    SELECT class_type, rows_num, columns_num
-                    FROM Cabin_class
-                    WHERE plane_id = %s
-                """, (plane_id,))
-                cabins = cur.fetchall()
-
-                layout = {x["class_type"]: (int(x["rows_num"]), int(x["columns_num"])) for x in cabins}
-
-                if "Economy" not in layout or "Business" not in layout:
-                    flash("This plane is missing cabin layout (Economy/Business) in Cabin_class.", "error")
-                    return render_template("admin_add_flight.html", planes=planes, routes=routes, layout_map=layout_map, route_map=route_map, logged_admin=logged_admin)
-
-                econ_rows, econ_cols = layout["Economy"]
-                bus_rows, bus_cols = layout["Business"]
-
-                # 2) Insert Flight
-                cur.execute("""
-                    INSERT INTO Flight (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time, flight_status)
-                    VALUES (%s, %s, %s, %s, %s, %s, 'Scheduled')
+                    INSERT INTO Flight
+                      (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time, flight_status)
+                    VALUES
+                      (%s, %s, %s, %s, %s, %s, 'Scheduled')
                 """, (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time))
 
-                # 3) Insert prices into Flight_Class_Pricing
+                # 5) Insert prices into Flight_Class_Pricing
                 cur.execute("""
                     INSERT INTO Flight_Class_Pricing (flight_id, plane_id, class_type, price)
                     VALUES (%s, %s, 'Economy', %s)
                 """, (flight_id, plane_id, float(econ_price)))
 
-                cur.execute("""
-                    INSERT INTO Flight_Class_Pricing (flight_id, plane_id, class_type, price)
-                    VALUES (%s, %s, 'Business', %s)
-                """, (flight_id, plane_id, float(bus_price)))
+                if has_business:
+                    cur.execute("""
+                        INSERT INTO Flight_Class_Pricing (flight_id, plane_id, class_type, price)
+                        VALUES (%s, %s, 'Business', %s)
+                    """, (flight_id, plane_id, float(bus_price)))
 
-                cur.execute("DELETE FROM Seat WHERE flight_id = %s", (flight_id,))
+                # 6) Insert seats according to Cabin_class layout
+                econ_rows = int(plane_layout["Economy"]["rows"])
+                econ_cols = int(plane_layout["Economy"]["cols"])
 
-                # 4) Insert seats (include plane_id because FK)
                 for r in range(1, econ_rows + 1):
                     for c in range(1, econ_cols + 1):
                         cur.execute("""
@@ -1178,22 +1404,66 @@ def admin_add_flight():
                             VALUES (%s, %s, %s, %s, 'Economy', NULL)
                         """, (flight_id, r, c, plane_id))
 
-                for r in range(1, bus_rows + 1):
-                    for c in range(1, bus_cols + 1):
-                        cur.execute("""
-                            INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
-                            VALUES (%s, %s, %s, %s, 'Business', NULL)
-                        """, (flight_id, r, c, plane_id))
+                if has_business:
+                    bus_rows = int(plane_layout["Business"]["rows"])
+                    bus_cols = int(plane_layout["Business"]["cols"])
+
+                    for r in range(1, bus_rows + 1):
+                        for c in range(1, bus_cols + 1):
+                            cur.execute("""
+                                INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
+                                VALUES (%s, %s, %s, %s, 'Business', NULL)
+                            """, (flight_id, r, c, plane_id))
+
+                # 7) Assign crew
+                for pid in selected_pilots:
+                    cur.execute("""
+                        INSERT INTO Pilots_in_flights (flight_id, employee_id)
+                        VALUES (%s, %s)
+                    """, (flight_id, pid))
+
+                for aid in selected_attendants:
+                    cur.execute("""
+                        INSERT INTO Flight_attendants_in_flights (flight_id, employee_id)
+                        VALUES (%s, %s)
+                    """, (flight_id, aid))
+
+            flash("Flight created successfully.", "success")
+            return redirect(url_for("admin_flights"))
 
         except mysql.connector.Error as e:
             flash(f"Database error: {e.msg}", "error")
-            return render_template("admin_add_flight.html", planes=planes, routes=routes, layout_map=layout_map, route_map=route_map, logged_admin=logged_admin)
+            return render_template(
+                "admin_add_flight.html",
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                plane_size_map=plane_size_map,
+                logged_admin=logged_admin,
+                pilots=pilots, attendants=attendants
+            )
+        except Exception:
+            flash("Failed to create flight. Please try again.", "error")
+            return render_template(
+                "admin_add_flight.html",
+                planes=planes, routes=routes,
+                layout_map=layout_map, route_map=route_map,
+                plane_size_map=plane_size_map,
+                logged_admin=logged_admin,
+                pilots=pilots, attendants=attendants
+            )
 
-
-        flash("Flight created successfully.", "success")
-        return redirect(url_for("admin_flights"))
-
-    return render_template("admin_add_flight.html", planes=planes, routes=routes, layout_map=layout_map, route_map=route_map, logged_admin=logged_admin)
+    # GET
+    return render_template(
+        "admin_add_flight.html",
+        planes=planes,
+        routes=routes,
+        layout_map=layout_map,
+        route_map=route_map,
+        plane_size_map=plane_size_map,
+        logged_admin=logged_admin,
+        pilots=pilots,
+        attendants=attendants
+    )
 
 @app.route("/admin/flights/cancel/<flight_id>", methods=["POST"])
 def admin_cancel_flight(flight_id):

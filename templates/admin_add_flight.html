@@ -21,11 +21,14 @@
     <input class="field-input" id="flight_duration" type="text" readonly>
 
     <label class="field-label">Plane</label>
-    <select class="field-input" name="plane_id" required>
+    <select class="field-input" name="plane_id" id="plane_id" required>
       {% for p in planes %}
         <option value="{{ p }}">{{ p }}</option>
       {% endfor %}
     </select>
+
+    <label class="field-label">Plane Size</label>
+    <input class="field-input" id="plane_size" type="text" readonly>
 
     <label class="field-label">Manager</label>
     <input class="field-input" type="text"
@@ -40,8 +43,8 @@
     <input class="field-input" type="time" name="takeoff_time" id="takeoff_time" required>
 
     <div class="field">
-      <label>Landing</label>
-      <div id="landingPreview" class="muted"></div>
+      <label class="field-label">Landing Preview</label>
+      <div id="landingPreview" class="muted" style="padding-left:12px;"></div>
     </div>
 
     <hr style="margin:18px 0; opacity:0.35;">
@@ -49,8 +52,9 @@
     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
       <div class="card" style="padding:12px;">
         <b>Economy</b>
+
         <label class="field-label">Price</label>
-        <input class="field-input" type="number" step="0.01" min="0" name="econ_price" placeholder="e.g. 399.00">
+        <input class="field-input" type="number" step="0.01" min="0" name="econ_price" placeholder="e.g. 399.00" required>
 
         <label class="field-label">Rows</label>
         <input class="field-input" id="econ_rows" type="text" readonly>
@@ -59,18 +63,53 @@
         <input class="field-input" id="econ_cols" type="text" readonly>
       </div>
 
-      <div class="card" style="padding:12px;">
+      <div class="card" id="businessCard" style="padding:12px;">
         <b>Business</b>
+
         <label class="field-label">Price</label>
-        <input class="field-input" type="number" step="0.01" min="0" name="bus_price" placeholder="e.g. 999.00">
+        <input class="field-input" id="bus_price" type="number" step="0.01" min="0" name="bus_price" placeholder="e.g. 999.00">
 
         <label class="field-label">Rows</label>
         <input class="field-input" id="bus_rows" type="text" readonly>
 
         <label class="field-label">Columns</label>
         <input class="field-input" id="bus_cols" type="text" readonly>
+
+        <p class="muted" id="businessHint" style="margin-top:10px; text-align:center;"></p>
       </div>
     </div>
+
+    <hr style="margin:18px 0; opacity:0.35;">
+
+    <h3 style="text-align:center; margin:0 0 10px;">Crew Assignment</h3>
+
+    <div class="muted" id="crewHint" style="text-align:center; margin-bottom:10px;">
+      Select route to see required crew (short/long flight)
+    </div>
+
+    <label class="field-label">Pilots (select multiple)</label>
+    <select class="field-input" name="pilot_ids" id="pilot_ids" multiple size="6" required>
+      {% for p in pilots %}
+        <option value="{{ p.employee_id }}">
+          {{ p.employee_id }} — {{ p.employee_first_name }} {{ p.employee_last_name }}
+          {% if p.long_flight_training %}(Long-trained){% endif %}
+        </option>
+      {% endfor %}
+    </select>
+
+    <label class="field-label">Flight Attendants (select multiple)</label>
+    <select class="field-input" name="attendant_ids" id="attendant_ids" multiple size="8" required>
+      {% for a in attendants %}
+        <option value="{{ a.employee_id }}">
+          {{ a.employee_id }} — {{ a.employee_first_name }} {{ a.employee_last_name }}
+          {% if a.long_flight_training %}(Long-trained){% endif %}
+        </option>
+      {% endfor %}
+    </select>
+
+    <p class="muted" style="text-align:center; margin-top:10px;">
+      Tip: hold <b>Ctrl</b> (Windows) / <b>Cmd</b> (Mac) to select multiple.
+    </p>
 
     <div style="justify-content:center; display:flex; gap:10px; margin-top:14px;">
       <button class="btn" type="submit">Create Flight</button>
@@ -80,25 +119,35 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const layoutMap = {{ layout_map|tojson }};
-  const routeMap  = {{ route_map|tojson }};
+  const layoutMap   = {{ layout_map|tojson }};
+  const routeMap    = {{ route_map|tojson }};
+  const planeSizeMap= {{ plane_size_map|tojson }};
 
-  const planeSelect = document.querySelector('select[name="plane_id"]');
-  const routeSelect = document.querySelector('select[name="route_id"]');
+  const planeSelect = document.getElementById("plane_id");
+  const routeSelect = document.getElementById("route_id");
 
   const dateEl = document.getElementById("takeoff_date");
   const timeEl = document.getElementById("takeoff_time");
   const landingOut = document.getElementById("landingPreview");
 
+  const crewHint = document.getElementById("crewHint");
+  const planeSizeOut = document.getElementById("plane_size");
+
+  const businessCard = document.getElementById("businessCard");
+  const businessHint = document.getElementById("businessHint");
+  const busPriceEl   = document.getElementById("bus_price");
+
   function pad2(n) { return String(n).padStart(2, "0"); }
+  function setVal(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.value = (val ?? "-");
+  }
 
   function updateLanding() {
-    if (!routeSelect || !dateEl || !timeEl || !landingOut) return;
-
-    const rid = routeSelect.value;          // string
+    const rid = routeSelect.value;
     const minutes = routeMap?.[rid];
-    const dateStr = dateEl.value;           // "YYYY-MM-DD"
-    const timeStr = timeEl.value;           // "HH:MM"
+    const dateStr = dateEl.value;
+    const timeStr = timeEl.value;
 
     if (!minutes || !dateStr || !timeStr) {
       landingOut.textContent = "Select route + takeoff date + takeoff time";
@@ -117,49 +166,67 @@ document.addEventListener("DOMContentLoaded", () => {
     landingOut.textContent = `${landingDate} ${landingTime} (duration: ${minutes} min)`;
   }
 
-  function setVal(id, val) {
-    const el = document.getElementById(id);
-    if (el) el.value = (val ?? "-");
+  function updateDurationAndCrewHint(){
+    const rid = routeSelect.value;
+    const minutes = routeMap?.[rid];
+    setVal("flight_duration", minutes);
+
+    if (!minutes || !crewHint) return;
+
+    const isLong = Number(minutes) > 360;
+    crewHint.textContent = isLong
+      ? "Long flight (> 6h): requires 3 pilots + 6 attendants (long-trained only)"
+      : "Short flight (≤ 6h): requires 2 pilots + 3 attendants";
+
+    updateLanding();
   }
 
-  function updateLayout() {
-    if (!planeSelect) return;
+  function updatePlaneLayoutAndSize(){
     const pid = planeSelect.value;
+
+    const size = planeSizeMap?.[pid] || "-";
+    if (planeSizeOut) planeSizeOut.value = size;
+
     const econ = layoutMap?.[pid]?.["Economy"];
     const bus  = layoutMap?.[pid]?.["Business"];
+
     setVal("econ_rows", econ?.rows);
     setVal("econ_cols", econ?.cols);
     setVal("bus_rows",  bus?.rows);
     setVal("bus_cols",  bus?.cols);
+
+    // If Business doesn't exist for this plane (small plane), visually disable Business price.
+    const hasBusiness = !!bus;
+    if (!hasBusiness){
+      if (businessHint) businessHint.textContent = "This plane has Economy only.";
+      if (busPriceEl){
+        busPriceEl.value = "";
+        busPriceEl.disabled = true;
+        busPriceEl.placeholder = "Not available";
+      }
+      if (businessCard) businessCard.style.opacity = "0.6";
+    } else {
+      if (businessHint) businessHint.textContent = "";
+      if (busPriceEl){
+        busPriceEl.disabled = false;
+        busPriceEl.placeholder = "e.g. 999.00";
+      }
+      if (businessCard) businessCard.style.opacity = "1";
+    }
   }
 
-  function updateDuration() {
-    if (!routeSelect) return;
-    const rid = routeSelect.value;     // string
-    setVal("flight_duration", routeMap?.[rid]);
-    updateLanding();                   // ✅ add this
-  }
+  // init + listeners
+  planeSelect.addEventListener("change", updatePlaneLayoutAndSize);
+  routeSelect.addEventListener("change", updateDurationAndCrewHint);
 
-  if (planeSelect) {
-    planeSelect.addEventListener("change", updateLayout);
-    updateLayout();
-  }
+  dateEl.addEventListener("change", updateLanding);
+  timeEl.addEventListener("change", updateLanding);
+  timeEl.addEventListener("input", updateLanding);
 
-  if (routeSelect) {
-    routeSelect.addEventListener("change", updateDuration);
-    updateDuration();
-  }
-
-  if (dateEl) dateEl.addEventListener("change", updateLanding);
-  if (timeEl) {
-    timeEl.addEventListener("change", updateLanding);
-    timeEl.addEventListener("input", updateLanding);
-  }
+  updatePlaneLayoutAndSize();
+  updateDurationAndCrewHint();
   updateLanding();
-
 });
 </script>
 
 {% endblock %}
-
-
