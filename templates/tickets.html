@@ -16,7 +16,7 @@
       <button class="btn" type="submit">Search</button>
     </form>
   {% else %}
-    <div style="text-align:center; line-height:1.7;">
+    <div style="text-align:center; line-height:1.7; color: #0b2a3a;">
       <div style="margin-top:12px;">
         <a class="btn" href="{{ url_for('tickets') }}">Search another ticket</a>
       </div>
@@ -25,20 +25,21 @@
 
       <h3>Order {{ order.order_id }}</h3>
       <p>
-        {{ order.origin_airport }} → {{ order.destination_airport }}<br>
-        Takeoff: {{ order.takeoff_date }} {{ order.takeoff_time }}<br>
-        Landing: {{ order.landing_date }} {{ order.landing_time }}<br>
-        Status: {{ order.order_status }}
+        <b>Order:</b> {{ order.order_id }}<br>
+        <b>Flight:</b> {{ order.origin_airport }} → {{ order.destination_airport }}<br>
+        <b>Takeoff:</b> {{ order.takeoff_date }} {{ order.takeoff_time }}<br>
+        <b>Landing:</b> {{ order.landing_date }} {{ order.landing_time }}<br>
+        <b>Status:</b> {{ order.order_status }
       </p>
 
       <h4>Seats</h4>
-      <ul>
+      <ul style="list-style-position: inside; padding:0; margin:0 auto; display:inline-block; text-align:left;">
         {% for s in seats %}
           <li>{{ s.class_type }} — Row {{ s.s_row }}, Col {{ s.s_column }}</li>
         {% endfor %}
       </ul>
 
-      <p><b>Total:</b> ₪{{ total }}</p>
+      <h3>Total: {{ total }} ₪</h3>
 
       {% if can_cancel %}
         <p class="muted" style="margin-top:8px;">
