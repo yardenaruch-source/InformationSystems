@@ -170,7 +170,7 @@ def register():
                     WHERE customer_email = %s
                 """, (email,))
                 if cur.fetchone():
-                    flash("That email is already registered.", "error")
+                    flash("That email is already registered", "error")
                     return render_template("register.html", today=today, next=next_url, form=form)
 
                 cur.execute("""
