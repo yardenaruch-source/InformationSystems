@@ -788,9 +788,9 @@ def checkout(order_id):
               ON fcp.flight_id  = s.flight_id
              AND fcp.plane_id   = s.plane_id
              AND fcp.class_type = s.class_type
-            WHERE s.order_id = %s;
+            WHERE s.order_id = %s
         """, (order_id,))
-        total = (cur.fetchone() or {}).get("total") or 0
+        total = cur.fetchone()["total"]
 
     return render_template("checkout.html", order=order, seats=seats, total=total)
 
