@@ -57,9 +57,9 @@
             <td>{{ f.origin_airport }}</td>
             <td>{{ f.destination_airport }}</td>
             <td>{{ f.takeoff_date }}</td>
-            <td>{{ f.takeoff_time[:5] }}</td>
+            <td>{{ f.takeoff_time }}</td>
             <td>{{ f.landing_date }}</td>
-            <td>{{ f.landing_time[:5] }}</td>
+            <td>{{ f.landing_time }}</td>
             <td>₪{{ f.from_price }}</td>
             <td>
               {% if session.get('user_email') %}
