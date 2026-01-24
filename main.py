@@ -713,7 +713,7 @@ def checkout(order_id):
                 return redirect(url_for("book"))
 
             # ✅ If this order is for a guest, save guest details NOW (after payment)
-            cur.execute("SELECT guest_email FROM Orders WHERE order_id = %s", (order_id,))
+            cur.execute("SELECT flight_id, guest_email FROM Orders WHERE order_id = %s", (order_id,))
             row = cur.fetchone()
             guest_email = (row or {}).get("guest_email")
 
@@ -775,11 +775,13 @@ def checkout(order_id):
         seats = cur.fetchall()
 
         cur.execute("""
-            SELECT SUM(cc.price) AS total
+            SELECT COALESCE(SUM(fcp.price), 0) AS total
             FROM Seat s
-            JOIN Cabin_class cc
-              ON cc.flight_id = s.flight_id AND cc.class_type = s.class_type
-            WHERE s.order_id = %s
+            JOIN Flight_Class_Pricing fcp
+              ON fcp.flight_id  = s.flight_id
+             AND fcp.plane_id   = s.plane_id
+             AND fcp.class_type = s.class_type
+            WHERE s.order_id = %s;
         """, (order_id,))
         total = (cur.fetchone() or {}).get("total") or 0
 
@@ -825,11 +827,13 @@ def tickets():
             seats = cur.fetchall()
 
             cur.execute("""
-                SELECT SUM(cc.price) AS total
+                SELECT COALESCE(SUM(fcp.price), 0) AS total
                 FROM Seat s
-                JOIN Cabin_class cc
-                  ON cc.flight_id = s.flight_id AND cc.class_type = s.class_type
-                WHERE s.order_id = %s
+                JOIN Flight_Class_Pricing fcp
+                  ON fcp.flight_id  = s.flight_id
+                 AND fcp.plane_id   = s.plane_id
+                 AND fcp.class_type = s.class_type
+                WHERE s.order_id = %s;
             """, (order_id,))
             total = (cur.fetchone() or {}).get("total") or 0
 
