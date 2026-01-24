@@ -85,27 +85,13 @@
     <!-- ✅ Pilots checkboxes -->
     <div style="margin-bottom:16px;">
       <label class="field-label">Pilots (select multiple)</label>
-
-      <div style="
-          border:1px solid rgba(0,0,0,0.18);
-          border-radius: 10px;
-          padding: 10px 12px;
-          background: rgba(255,255,255,0.92);
-          max-height: 170px;
-          overflow:auto;
-        ">
+      <div class="crew-box">
         {% for p in pilots %}
-          <label style="
-              display:flex;
-              align-items:center;
-              gap:10px;
-              padding: 6px 4px;
-              cursor:pointer;
-            ">
+          <label class="crew-item">
             <input type="checkbox" name="pilot_ids" value="{{ p.employee_id }}">
             <span>
               {{ p.employee_id }} — {{ p.employee_first_name }} {{ p.employee_last_name }}
-              {% if p.long_flight_training %} (Long-trained){% endif %}
+              {% if p.long_flight_training %}(Long-trained){% endif %}
             </span>
           </label>
         {% endfor %}
@@ -115,27 +101,13 @@
     <!-- ✅ Flight attendants checkboxes -->
     <div style="margin-bottom:16px;">
       <label class="field-label">Flight Attendants (select multiple)</label>
-
-      <div style="
-          border:1px solid rgba(0,0,0,0.18);
-          border-radius: 10px;
-          padding: 10px 12px;
-          background: rgba(255,255,255,0.92);
-          max-height: 170px;
-          overflow:auto;
-        ">
+      <div class="crew-box">
         {% for a in attendants %}
-          <label style="
-              display:flex;
-              align-items:center;
-              gap:10px;
-              padding: 6px 4px;
-              cursor:pointer;
-            ">
+          <label class="crew-item">
             <input type="checkbox" name="attendant_ids" value="{{ a.employee_id }}">
             <span>
               {{ a.employee_id }} — {{ a.employee_first_name }} {{ a.employee_last_name }}
-              {% if a.long_flight_training %} (Long-trained){% endif %}
+              {% if a.long_flight_training %}(Long-trained){% endif %}
             </span>
           </label>
         {% endfor %}
