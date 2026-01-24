@@ -1,9 +1,20 @@
 {% extends "base.html" %}
 {% block title %}Guest Details{% endblock %}
+{% block flashes %}{% endblock %}
 
 {% block content %}
 <section class="board narrow-board">
   <h1>Guest Details</h1>
+
+  <div class="flash-wrap">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, msg in messages %}
+          <div class="flash flash-{{ category }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+  </div>
 
   <form method="post" class="form" style="margin-top:12px;">
     <input type="hidden" name="next" value="{{ next_url }}">
