@@ -1205,7 +1205,7 @@ def admin_add_flight():
     if request.method == "POST":
         flight_id = request.form.get("flight_id", "").strip().upper()
         route_id = request.form.get("route_id", "").strip()          # confirm it's string
-        plane_id = request.form.get("plane_id", "").strip().upper()
+        plane_id = request.form.get("plane_id", "").strip()
         manager_id = session.get("admin_employee_id")
         takeoff_date = request.form.get("takeoff_date", "").strip()
         takeoff_time = request.form.get("takeoff_time", "").strip()
@@ -1245,6 +1245,29 @@ def admin_add_flight():
 
         try:
             with db_cursor() as cur:
+                # 0) Make sure flight_id does not already exist (friendly message instead of DB crash)
+                cur.execute("SELECT 1 FROM Flight WHERE flight_id = %s LIMIT 1", (flight_id,))
+                if cur.fetchone():
+                    return render_with_error(f"Flight ID '{flight_id}' already exists. Please choose a different ID.")
+
+                # 0.5) Compute the new flight time window
+                # duration_minutes is already computed by your route filter: filter_crew_for_route(route_id)
+                new_start_dt = datetime.strptime(f"{takeoff_date} {takeoff_time}", "%Y-%m-%d %H:%M")
+                new_end_dt = new_start_dt + timedelta(minutes=int(duration_minutes))
+
+                # 1) Prevent plane overlap (THIS is your requirement)
+                if has_plane_conflict(cur, plane_id, new_start_dt, new_end_dt):
+                    return render_with_error("This plane already has another flight that overlaps this time window.")
+
+                # 2) (Optional but recommended) Prevent crew overlap too
+                for pid in pilot_ids:
+                    if has_employee_conflict(cur, "Pilots_in_flights", pid, new_start_dt, new_end_dt):
+                        return render_with_error(f"Pilot {pid} already has an overlapping flight.")
+
+                for aid in attendant_ids:
+                    if has_employee_conflict(cur, "Flight_attendants_in_flights", aid, new_start_dt, new_end_dt):
+                        return render_with_error(f"Flight attendant {aid} already has an overlapping flight.")
+
                 # 1) Get layout from Cabin_class for selected plane
                 cur.execute("""
                     SELECT class_type, rows_num, columns_num
@@ -1301,9 +1324,6 @@ def admin_add_flight():
                     INSERT INTO Flight_Class_Pricing (flight_id, plane_id, class_type, price)
                     VALUES (%s, %s, 'Business', %s)
                 """, (flight_id, plane_id, float(bus_price)))
-
-                # 5) Prevent duplicate seat PK errors
-                cur.execute("DELETE FROM Seat WHERE flight_id = %s", (flight_id,))
 
                 # 6) Insert seats
                 for r in range(1, econ_rows + 1):
