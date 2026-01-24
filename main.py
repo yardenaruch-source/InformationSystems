@@ -1251,20 +1251,22 @@ def admin_add_flight():
 
         try:
             with db_cursor() as cur:
-                # 0) Make sure flight_id does not already exist (friendly message instead of DB crash)
+                # 0) Make sure flight_id does not already exist
                 cur.execute("SELECT 1 FROM Flight WHERE flight_id = %s LIMIT 1", (flight_id,))
                 if cur.fetchone():
-                    return render_with_error(f"Flight ID '{flight_id}' already exists. Please choose a different ID.")
+                    return render_with_error(
+                        f"Flight ID '{flight_id}' already exists. Please choose a different ID."
+                    )
 
-                # 0.5) Compute the new flight time window
-                # duration_minutes is already computed by your route filter: filter_crew_for_route(route_id)
+                # 0.5) Compute new flight window
                 new_start_dt = datetime.strptime(f"{takeoff_date} {takeoff_time}", "%Y-%m-%d %H:%M")
                 new_end_dt = new_start_dt + timedelta(minutes=int(duration_minutes))
 
+                # (optional debug) confirm db
                 cur.execute("SELECT DATABASE() AS db")
-                print("DB in use:", cur.fetchone()["db"])
+                print("DB in use:", (cur.fetchone() or {}).get("db"))
 
-                # 1) Prevent plane overlap (THIS is your requirement)
+                # 1) Prevent plane overlap
                 conflict = has_plane_conflict(cur, plane_id, new_start_dt, new_end_dt)
                 if conflict:
                     return render_with_error(
@@ -1272,7 +1274,7 @@ def admin_add_flight():
                         f"({conflict['start_dt']} → {conflict['end_dt']}, status={conflict['flight_status']})."
                     )
 
-                # 2) (Optional but recommended) Prevent crew overlap too
+                # 2) Prevent crew overlap
                 for pid in pilot_ids:
                     if has_employee_conflict(cur, "Pilots_in_flights", pid, new_start_dt, new_end_dt):
                         return render_with_error(f"Pilot {pid} already has an overlapping flight.")
@@ -1281,7 +1283,7 @@ def admin_add_flight():
                     if has_employee_conflict(cur, "Flight_attendants_in_flights", aid, new_start_dt, new_end_dt):
                         return render_with_error(f"Flight attendant {aid} already has an overlapping flight.")
 
-                # 1) Get layout from Cabin_class for selected plane
+                # 3) Cabin layout (Economy required, Business optional)
                 cur.execute("""
                     SELECT class_type, rows_num, columns_num
                     FROM Cabin_class
@@ -1290,55 +1292,31 @@ def admin_add_flight():
                 cabins = cur.fetchall()
 
                 layout = {x["class_type"]: (int(x["rows_num"]), int(x["columns_num"])) for x in cabins}
+
                 if "Economy" not in layout:
                     return render_with_error("This plane is missing Economy layout in Cabin_class.")
 
-                # business is optional
-                econ_rows, econ_cols = layout["Economy"]
-                bus_rows = bus_cols = 0
                 has_business = "Business" in layout
 
-                if not econ_price:
-                    return render_with_error("Please enter Economy price.")
-
-                if has_business and not bus_price:
-                    return render_with_error("Please enter Business price.")
-
+                econ_rows, econ_cols = layout["Economy"]
+                bus_rows = bus_cols = 0
                 if has_business:
                     bus_rows, bus_cols = layout["Business"]
 
-                # 2) ✅ Long-flight training enforcement (server-side)
-                if is_long_flight:
-                    if not pilot_ids or not attendant_ids:
-                        return render_with_error("Long flights require selecting trained pilots and attendants.")
+                # 4) Prices validation (Economy required, Business only if exists)
+                if not econ_price:
+                    return render_with_error("Please enter Economy price.")
+                if has_business and not bus_price:
+                    return render_with_error("Please enter Business price.")
 
-                    # pilots must be long-trained
-                    cur.execute("""
-                        SELECT employee_id
-                        FROM Pilot
-                        WHERE long_flight_training = 1
-                    """)
-                    allowed_pilots = {row["employee_id"] for row in cur.fetchall()}
-                    if any(pid not in allowed_pilots for pid in pilot_ids):
-                        return render_with_error("One of the selected pilots is not long-flight trained.")
-
-                    # attendants must be long-trained
-                    cur.execute("""
-                        SELECT employee_id
-                        FROM Flight_attendant
-                        WHERE long_flight_training = 1
-                    """)
-                    allowed_attendants = {row["employee_id"] for row in cur.fetchall()}
-                    if any(aid not in allowed_attendants for aid in attendant_ids):
-                        return render_with_error("One of the selected attendants is not long-flight trained.")
-
-                # 3) Insert Flight
+                # 5) Insert Flight
                 cur.execute("""
-                    INSERT INTO Flight (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time, flight_status)
+                    INSERT INTO Flight
+                      (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time, flight_status)
                     VALUES (%s, %s, %s, %s, %s, %s, 'Scheduled')
                 """, (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time))
 
-                # 4) Insert prices into Flight_Class_Pricing
+                # 6) Insert pricing
                 cur.execute("""
                     INSERT INTO Flight_Class_Pricing (flight_id, plane_id, class_type, price)
                     VALUES (%s, %s, 'Economy', %s)
@@ -1350,13 +1328,10 @@ def admin_add_flight():
                         VALUES (%s, %s, 'Business', %s)
                     """, (flight_id, plane_id, float(bus_price)))
 
-                # 6) Insert seats
-                for r in range(1, econ_rows + 1):
-                    for c in range(1, econ_cols + 1):
-                        cur.execute("""
-                            INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
-                            VALUES (%s, %s, %s, %s, 'Economy', NULL)
-                        """, (flight_id, r, c, plane_id))
+                # 7) Seats (clear first to avoid duplicate PK on retry)
+                cur.execute("DELETE FROM Seat WHERE flight_id = %s", (flight_id,))
+
+                # Business seats: rows 1..bus_rows
                 if has_business:
                     for r in range(1, bus_rows + 1):
                         for c in range(1, bus_cols + 1):
@@ -1365,7 +1340,16 @@ def admin_add_flight():
                                 VALUES (%s, %s, %s, %s, 'Business', NULL)
                             """, (flight_id, r, c, plane_id))
 
-                # 7) Insert crew selections into join tables
+                # Economy seats: rows (bus_rows+1) .. (bus_rows+econ_rows)
+                econ_row_start = (bus_rows + 1) if has_business else 1
+                for r in range(econ_row_start, econ_row_start + econ_rows):
+                    for c in range(1, econ_cols + 1):
+                        cur.execute("""
+                            INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
+                            VALUES (%s, %s, %s, %s, 'Economy', NULL)
+                        """, (flight_id, r, c, plane_id))
+
+                # 8) Crew links (replace existing if retry)
                 cur.execute("DELETE FROM Pilots_in_flights WHERE flight_id = %s", (flight_id,))
                 cur.execute("DELETE FROM Flight_attendants_in_flights WHERE flight_id = %s", (flight_id,))
 
@@ -1381,13 +1365,37 @@ def admin_add_flight():
                         VALUES (%s, %s)
                     """, (flight_id, aid))
 
-        except mysql.connector.Error as e:
-            return render_with_error(f"Database error: {e.msg}")
-        except Exception:
-            return render_with_error("Something went wrong while creating the flight.")
+            # ✅ ONLY if everything succeeded
+            flash("Flight created successfully.", "success")
+            return redirect(url_for("admin_flights"))
 
-        flash("Flight created successfully.", "success")
-        return redirect(url_for("admin_flights"))
+        except mysql.connector.Error as e:
+            # Cleanup partial inserts (important with autocommit)
+            try:
+                with db_cursor() as cur2:
+                    cur2.execute("DELETE FROM Seat WHERE flight_id = %s", (flight_id,))
+                    cur2.execute("DELETE FROM Pilots_in_flights WHERE flight_id = %s", (flight_id,))
+                    cur2.execute("DELETE FROM Flight_attendants_in_flights WHERE flight_id = %s", (flight_id,))
+                    cur2.execute("DELETE FROM Flight_Class_Pricing WHERE flight_id = %s", (flight_id,))
+                    cur2.execute("DELETE FROM Flight WHERE flight_id = %s", (flight_id,))
+            except Exception:
+                pass
+
+            return render_with_error(f"Database error: {e.msg}")
+
+        except Exception:
+            # Catch-all
+            try:
+                with db_cursor() as cur2:
+                    cur2.execute("DELETE FROM Seat WHERE flight_id = %s", (flight_id,))
+                    cur2.execute("DELETE FROM Pilots_in_flights WHERE flight_id = %s", (flight_id,))
+                    cur2.execute("DELETE FROM Flight_attendants_in_flights WHERE flight_id = %s", (flight_id,))
+                    cur2.execute("DELETE FROM Flight_Class_Pricing WHERE flight_id = %s", (flight_id,))
+                    cur2.execute("DELETE FROM Flight WHERE flight_id = %s", (flight_id,))
+            except Exception:
+                pass
+
+            return render_with_error("Something went wrong while creating the flight.")
 
     # -------------------------
     # GET: render page

@@ -8,11 +8,16 @@ def db_cursor():
         user="yardenaruch",
         password="ily3hap3",
         database="yardenaruch$FLYTAUdb",
-        autocommit=True
+        autocommit=False,   # ✅ IMPORTANT: allow rollback
     )
+
+    cursor = connection.cursor(dictionary=True)
     try:
-        cursor = connection.cursor(dictionary=True)
         yield cursor
+        connection.commit()     # ✅ commit only if no exception happened
+    except Exception:
+        connection.rollback()   # ✅ undo partial inserts if something failed
+        raise                   # ✅ re-raise so your route can show the error
     finally:
         cursor.close()
         connection.close()
