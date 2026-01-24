@@ -592,13 +592,13 @@ main.container{
 /* Each legend row: fixed swatch column + text column */
 .seats-page .legend-item{
   display: grid;
-  grid-template-columns: 40 px auto;
+  grid-template-columns: 37 px auto;
   align-items: center;
   justify-content: start;
   gap: 12px;
 
   /* IMPORTANT: same width for all rows -> straight edges */
-  width: 220px;        /* adjust 160–220 if you want */
+  width: 200px;        /* adjust 160–220 if you want */
   max-width: 100%;
 
   margin: 0;           /* no auto-centering per row */
@@ -608,8 +608,8 @@ main.container{
 
 /* Swatch: identical size + perfect centering */
 .seats-page .legend-swatch{
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 10px;
   display: grid;
   place-items: center;
