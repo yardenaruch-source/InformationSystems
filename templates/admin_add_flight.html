@@ -64,12 +64,12 @@
         <input class="field-input" id="econ_cols" type="text" readonly>
       </div>
 
-      <div class="card" style="padding:12px;">
+      <div class="card" id="businessCard" style="padding:12px;">
         <b>Business</b>
 
         <label class="field-label">Price</label>
-        <input class="field-input" type="number" step="0.01" min="0"
-               name="bus_price" placeholder="e.g. 999.00" required>
+        <input class="field-input" id="bus_price" type="number" step="0.01" min="0"
+               name="bus_price" placeholder="e.g. 999.00">
 
         <label class="field-label">Rows</label>
         <input class="field-input" id="bus_rows" type="text" readonly>
@@ -128,6 +128,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const planeSelect = document.querySelector('select[name="plane_id"]');
   const routeSelect = document.querySelector('select[name="route_id"]');
+  const businessCard = document.getElementById("businessCard");
+  const busPriceEl   = document.getElementById("bus_price"); // add id="bus_price" to the input
+
 
   const dateEl = document.getElementById("takeoff_date");
   const timeEl = document.getElementById("takeoff_time");
@@ -167,14 +170,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateLayout() {
     if (!planeSelect) return;
-    const pid = planeSelect.value;
+
+    const pid  = planeSelect.value;
     const econ = layoutMap?.[pid]?.["Economy"];
     const bus  = layoutMap?.[pid]?.["Business"];
+
+    // Economy always
     setVal("econ_rows", econ?.rows);
     setVal("econ_cols", econ?.cols);
-    setVal("bus_rows",  bus?.rows);
-    setVal("bus_cols",  bus?.cols);
+
+    // ✅ Business is optional
+    const hasBusiness = !!bus;
+
+    if (hasBusiness) {
+      setVal("bus_rows", bus?.rows);
+      setVal("bus_cols", bus?.cols);
+
+      if (businessCard) businessCard.style.display = ""; // show
+      if (busPriceEl) busPriceEl.disabled = false;       // allow input
+    } else {
+      setVal("bus_rows", "-");
+      setVal("bus_cols", "-");
+
+      if (businessCard) businessCard.style.display = "none"; // hide
+      if (busPriceEl) {
+        busPriceEl.value = "";        // clear so it won’t submit old value
+        busPriceEl.disabled = true;   // prevent validation + prevent submit
+      }
+    }
   }
+
 
   function updateDuration() {
     if (!routeSelect) return;

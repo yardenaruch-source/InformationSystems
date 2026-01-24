@@ -1277,8 +1277,15 @@ def admin_add_flight():
                 cabins = cur.fetchall()
 
                 layout = {x["class_type"]: (int(x["rows_num"]), int(x["columns_num"])) for x in cabins}
-                if "Economy" not in layout or "Business" not in layout:
-                    return render_with_error("This plane is missing cabin layout (Economy/Business) in Cabin_class.")
+                if "Economy" not in layout:
+                    return render_with_error("This plane is missing Economy layout in Cabin_class.")
+
+                # business is optional
+                econ_rows, econ_cols = layout["Economy"]
+                bus_rows = bus_cols = 0
+                has_business = "Business" in layout
+                if has_business:
+                    bus_rows, bus_cols = layout["Business"]
 
                 econ_rows, econ_cols = layout["Economy"]
                 bus_rows, bus_cols = layout["Business"]
@@ -1320,10 +1327,11 @@ def admin_add_flight():
                     VALUES (%s, %s, 'Economy', %s)
                 """, (flight_id, plane_id, float(econ_price)))
 
-                cur.execute("""
-                    INSERT INTO Flight_Class_Pricing (flight_id, plane_id, class_type, price)
-                    VALUES (%s, %s, 'Business', %s)
-                """, (flight_id, plane_id, float(bus_price)))
+                if has_business:
+                    cur.execute("""
+                        INSERT INTO Flight_Class_Pricing (flight_id, plane_id, class_type, price)
+                        VALUES (%s, %s, 'Business', %s)
+                    """, (flight_id, plane_id, float(bus_price)))
 
                 # 6) Insert seats
                 for r in range(1, econ_rows + 1):
@@ -1332,13 +1340,13 @@ def admin_add_flight():
                             INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
                             VALUES (%s, %s, %s, %s, 'Economy', NULL)
                         """, (flight_id, r, c, plane_id))
-
-                for r in range(1, bus_rows + 1):
-                    for c in range(1, bus_cols + 1):
-                        cur.execute("""
-                            INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
-                            VALUES (%s, %s, %s, %s, 'Business', NULL)
-                        """, (flight_id, r, c, plane_id))
+                if has_business:
+                    for r in range(1, bus_rows + 1):
+                        for c in range(1, bus_cols + 1):
+                            cur.execute("""
+                                INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
+                                VALUES (%s, %s, %s, %s, 'Business', NULL)
+                            """, (flight_id, r, c, plane_id))
 
                 # 7) Insert crew selections into join tables
                 cur.execute("DELETE FROM Pilots_in_flights WHERE flight_id = %s", (flight_id,))
