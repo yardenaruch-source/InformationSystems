@@ -51,6 +51,15 @@ def current_user():
         )
         return cur.fetchone()
 
+def refresh_flight_statuses():
+    with db_cursor() as cur:
+        cur.execute("""
+            UPDATE Flight
+            SET flight_status = 'Completed'
+            WHERE flight_status IN ('Scheduled', 'Full')
+              AND TIMESTAMP(takeoff_date, takeoff_time) < NOW()
+        """)
+
 @app.route("/")
 def home():
     user = current_user()
@@ -238,6 +247,8 @@ def register():
 
 @app.route("/book", methods=["GET"])
 def book():
+    refresh_flight_statuses()
+
     origin = request.args.get("origin", "").strip()
     destination = request.args.get("destination", "").strip()
     date = request.args.get("date", "").strip()
@@ -520,6 +531,8 @@ def purchase_history():
     if not session.get("user_email"):
         flash("Please log in to view your purchase history.", "error")
         return redirect(url_for("login", next=url_for("purchase_history")))
+
+    refresh_flight_statuses()
 
     email = session["user_email"]
 
@@ -808,6 +821,8 @@ def checkout(order_id):
 def tickets():
     cleanup_expired_pending_orders()
 
+    refresh_flight_statuses()
+
     order = None
     seats = []
     total = 0
@@ -866,6 +881,7 @@ def tickets():
 
 @app.route("/cancel/<order_id>", methods=["POST"])
 def cancel_order(order_id):
+    refresh_flight_statuses()
     with db_cursor() as cur:
         # fetch order + flight time
         cur.execute("""
@@ -965,6 +981,8 @@ def go_admin():
 def admin_flights():
     if not session.get("admin_employee_id"):
         return redirect(url_for("admin_login"))
+
+    refresh_flight_statuses()
 
     flight_id = request.args.get("flight_id", "").strip().upper()
     status = request.args.get("status", "").strip()
@@ -1472,6 +1490,8 @@ def admin_cancel_flight(flight_id):
     if not session.get("admin_employee_id"):
         return redirect(url_for("admin_login"))
 
+    refresh_flight_statuses()
+
     flight_id = flight_id.strip().upper()
     admin_id = session.get("admin_employee_id")
 
@@ -1570,6 +1590,8 @@ def admin_cancel_flight(flight_id):
 def admin_dashboard():
     if not session.get("admin_employee_id"):
         return redirect(url_for("admin_login"))
+
+    refresh_flight_statuses()
 
     with db_cursor() as cur:
         cur.execute("SELECT COUNT(*) AS n FROM Plane")
