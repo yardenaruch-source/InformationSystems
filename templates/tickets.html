@@ -43,8 +43,8 @@
       {% if can_cancel %}
         <p class="muted" style="margin-top:8px;">
           You can cancel up to <b>36 hours</b> before takeoff<br>
-          Cancellation fee: <b>5%</b> (₪{{ "%.2f"|format(total * 0.05) }})<br>
-          Refund: <b>95%</b> (₪{{ "%.2f"|format(total * 0.95) }})
+          Cancellation fee: <b>5%</b> (₪{{ "%.2f"|format(total|float) * 0.05) }})<br>
+          Refund: <b>95%</b> (₪{{ "%.2f"|format(total|float) * 0.95) }})
         </p>
 
         <form method="post"
