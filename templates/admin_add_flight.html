@@ -13,7 +13,8 @@
     <label class="field-label">Route</label>
     <select class="field-input" name="route_id" id="route_id" required>
       {% for r in routes %}
-        <option value="{{ r.route_id }}">
+        <option value="{{ r.route_id }}"
+          {% if selected_route_id|string == r.route_id|string %}selected{% endif %}>
           {{ r.route_id }} — {{ r.origin_airport }} → {{ r.destination_airport }}
         </option>
       {% endfor %}
@@ -199,6 +200,19 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   updateLanding();
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const routeSelect = document.getElementById("route_id");
+  if (!routeSelect) return;
+
+  routeSelect.addEventListener("change", () => {
+    const rid = routeSelect.value;
+    const url = new URL(window.location.href);
+    url.searchParams.set("route_id", rid);
+    window.location.href = url.toString();   // reload so server returns filtered crew
+  });
 });
 </script>
 
