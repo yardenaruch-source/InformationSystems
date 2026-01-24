@@ -520,13 +520,13 @@ main.container{
   width: 100%;
   text-align: center;
   margin: 0;
-  font-size: 20px;
 }
 
 .seats-page .seats-legend{
   width: 100%;
   text-align: center;
   margin: 0;
+  font-size: 18px;
 }
 
 .seats-page .seats-title{
