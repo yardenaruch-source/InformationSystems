@@ -1000,7 +1000,7 @@ def admin_login():
             manager = cur.fetchone()
 
         if not manager or manager["manager_password"] != password:
-            flash("Invalid email or password..", "error")
+            flash("Invalid employee ID or password", "error")
             return render_template("admin_login.html")
 
         session.permanent = True
