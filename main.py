@@ -948,7 +948,7 @@ def generate_order_id(cur, max_tries=20):
 
 def cleanup_expired_pending_orders():
     with db_cursor() as cur:
-        # Find orders that should be removed (never paid)
+        # Find pending orders that should be removed (never paid)
         cur.execute("""
             SELECT order_id
             FROM Orders
