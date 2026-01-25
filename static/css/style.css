@@ -1,32 +1,25 @@
-/* =========================
-   THEME VARIABLES
-   ========================= */
 :root{
   --text:#e9ecf3;
   --muted:#a9b1c7;
 
-  /* Navbar look */
   --nav-bg: rgba(255,255,255,0.92);
   --nav-text: #0b7e86;
   --nav-text-hover: #06686f;
 
-  /* General UI */
   --card-bg: rgba(17,26,51,0.88);
   --card-border: rgba(255,255,255,0.16);
   --shadow: 0 12px 30px rgba(0,0,0,0.10);
+
+    --aisle: 28px;
+  --seat: 44px;
 }
 
-/* =========================
-   GLOBAL / BASE
-   ========================= */
 *{ box-sizing:border-box; }
 
 body{
   font-family: system-ui, Arial, sans-serif;
   color: var(--text);
   min-height: 100vh;
-
-  /* Background photo on ALL pages */
   background-image: url("/static/img/background2.png");
   background-size: cover;
   background-position: center 25%;
@@ -45,9 +38,6 @@ main.container{
   padding-bottom: 40px;
 }
 
-/* =========================
-   NAVBAR (TOP BAR)
-   ========================= */
 .top_bar{
   position: sticky;
   top: 0;
@@ -55,13 +45,11 @@ main.container{
   background: transparent;
 }
 
-/* rounded white pill */
 .top_bar_inner{
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 30px;
-
   background: var(--nav-bg);
   border-radius: 999px;
   padding: 8px 18px;
@@ -70,7 +58,6 @@ main.container{
   box-shadow: var(--shadow);
 }
 
-/* Brand (logo link) */
 .brand{
   display: flex;
   align-items: center;
@@ -79,18 +66,17 @@ main.container{
   color: var(--nav-text);
 }
 
-/* Logo image */
 .nav-logo{
   height: 40px;
   width: auto;
   display: block;
   transition: transform 0.15s ease;
 }
+
 .brand:hover .nav-logo{
   transform: scale(1.15);
 }
 
-/* Nav links */
 .nav{
   display: flex;
   align-items: center;
@@ -109,8 +95,7 @@ main.container{
   text-decoration: none;
   color: var(--nav-text);
   opacity: 0.95;
-
-  font-weight: 450;    /* less bold */
+  font-weight: 400;
   font-size: 20px;
   letter-spacing: 0.3px;
   text-transform: uppercase;
@@ -121,12 +106,10 @@ main.container{
   color: var(--nav-text-hover);
 }
 
-/* Active page link (you already set the class in base.html) */
 .nav a.active{
   font-weight: 700;
 }
 
-/* Logged-in badge */
 .nav-user{
   color: rgba(0,0,0,0.65);
   font-size: .92rem;
@@ -136,14 +119,12 @@ main.container{
   background: rgba(255,255,255,0.65);
 }
 
-/* Keyboard focus */
 .nav a:focus-visible{
   outline: 2px solid rgba(11,126,134,0.55);
   outline-offset: 3px;
   border-radius: 10px;
 }
 
-/* Make admin logout button look like nav links */
 .nav-form {
   display: inline;
 }
@@ -151,11 +132,9 @@ main.container{
 .nav-link {
   all: unset;
   cursor: pointer;
-
   text-decoration: none;
   color: var(--nav-text);
   opacity: 0.95;
-
   font-weight: 450;
   font-size: 20px;
   letter-spacing: 0.3px;
@@ -170,9 +149,7 @@ main.container{
 .nav-link.active {
   font-weight: 700;
 }
-/* =========================
-   HOMEPAGE HERO TEXT
-   ========================= */
+
 .hero-text{
   text-align: center;
   margin-top: 60px;
@@ -192,8 +169,6 @@ main.container{
   justify-content: center;
   border-radius: 999px;
   padding: 14px 32px;
-
-  /* left solid white -> fades to transparent on the right */
   background: linear-gradient(
     to right,
     rgba(255,255,255,0.95) 0%,
@@ -202,7 +177,6 @@ main.container{
     rgba(255,255,255,0.30) 75%,
     rgba(255,255,255,0.00) 100%
   );
-
   box-shadow: 0 8px 25px rgba(0,0,0,0.14);
   backdrop-filter: blur(6px);
 }
@@ -214,9 +188,6 @@ main.container{
   line-height: 1.1;
 }
 
-/* =========================
-   FLASH MESSAGES
-   ========================= */
 .flash-wrap{
   margin-top: 10px;
   margin-bottom: 10px;
@@ -242,9 +213,6 @@ main.container{
 
 .flash-error{ color: #d60000; }
 
-/* =========================
-   BUTTONS (used for Logout in navbar + anywhere else)
-   ========================= */
 .checkbox-row{
   display:flex;
   align-items:center;
@@ -256,14 +224,13 @@ main.container{
 .checkbox-row input[type="checkbox"]{
   width:18px;
   height:18px;
-  accent-color:#0d6efd; /* nice blue like modern UI */
+  accent-color:#0d6efd;
   cursor:pointer;
 }
 
 .checkbox-row label{
   cursor:pointer;
 }
-
 
 .btn{
   display: inline-flex;
@@ -286,20 +253,16 @@ main.container{
   background: var(--nav-text-hover);
   border-color: var(--nav-text-hover);
 }
-
+/*
 .btn-outline{
   background: transparent;
   border-color: rgba(255,255,255,0.18);
   color: var(--text);
 }
+*/
 
-/* =========================
-   BOARD (Book / Login / Tickets pages)
-   ========================= */
 .board{
   width: min(1080px, 92vw);
-  margin: 60px auto;
-  background: rgba(255,255,255,0.92);
   background: rgba(255,255,255,0.92);
   border-radius: 14px;
   padding: 22px;
@@ -308,14 +271,12 @@ main.container{
   margin: 15px auto;
 }
 
-/* Optional narrower board (your login uses board + narrow-board) */
 .narrow-board{
   width: min(420px, 92vw);
 }
 
-/* Make multi-select crew boxes squared (only these) */
 .board select[multiple]{
-  border-radius: 10px;   /* squared but still nice */
+  border-radius: 10px;
   height: auto;
   padding: 10px 14px;
 }
@@ -333,11 +294,11 @@ main.container{
 .board form{
   display: flex;
   flex-direction: column;
-  gap: 8px;   /* 👈 controls spacing between rows */
+  gap: 8px;
   padding-left: 10px;
 }
 
-.board form.board-search{
+.board .board-search{
   display: grid;
   grid-template-columns: 1.2fr 1.2fr 1fr auto;
   gap: 14px;
@@ -347,14 +308,13 @@ main.container{
 }
 
 .form label{
-  margin-bottom: -4px;   /* ✅ pulls the input closer */
+  margin-bottom: -4px;
 }
 
 .form .btn{
-  margin-top: 12px;   /* ✅ pushes the button lower */
+  margin-top: 12px;
 }
 
-/* Board input styles */
 .board input,
 .board select{
   width: 100%;
@@ -385,18 +345,6 @@ main.container{
   padding-left: 12px;
 }
 
-/* Search row */
-.board-search{
-  display: grid;
-  grid-template-columns: 1.2fr 1.2fr 1fr auto;
-  grid-auto-flow: column;
-  align-items: end;
-  gap: 14px;
-  align-items: end;
-  padding: 10px 10px 14px;
-  border-bottom: 1px solid rgba(0,0,0,0.10);
-}
-
 .board-field label{
   display: block;
   font-weight: 600;
@@ -417,7 +365,6 @@ main.container{
   border-color: rgba(60,160,170,0.8);
 }
 
-/* Table */
 .board-table-wrap{
   overflow-x: auto;
   padding: 10px;
@@ -442,7 +389,7 @@ main.container{
   font-size: 13px;
   vertical-align: middle;
 }
-
+/*
 .book-btn{
   display: inline-block;
   padding: 8px 14px;
@@ -452,7 +399,7 @@ main.container{
   text-decoration: none;
   font-weight: 700;
 }
-
+*/
 .book-btn:hover{
   filter: brightness(0.96);
 }
@@ -463,7 +410,6 @@ main.container{
   color: rgba(0,0,0,0.55);
 }
 
-/* Pager */
 .board-pager{
   display: flex;
   justify-content: flex-end;
@@ -481,16 +427,6 @@ main.container{
   font-weight: 700;
 }
 
-/* =========================
-   SEATS (Seats page)
-   ========================= */
-
-:root{
-  --aisle: 28px;
-  --seat: 44px;
-}
-
-/* ---- Page layout (left info + right seat map) ---- */
 .seats-page .seats-layout{
   display: grid;
   grid-template-columns: 420px max-content;
@@ -508,20 +444,17 @@ main.container{
   }
 }
 
-/* Left column */
 .seats-page .seats-side{
   display: grid;
   gap: 8px;
 }
 
-/* Right column */
 .seats-page .seats-main{
   display: grid;
   gap: 8px;
-  justify-items: center; /* center map + buttons */
+  justify-items: center;
 }
 
-/* ---- Header / summary / legend boxes ---- */
 .seats-page .seats-header,
 .seats-page .seats-summary{
   width: 100%;
@@ -545,7 +478,6 @@ main.container{
   font-weight: 800;
 }
 
-/* ---- Summary box (Selected seats + total) ---- */
 .seats-page .summary-row{
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -568,17 +500,13 @@ main.container{
   font-weight: 800;
   color: #051c2e;
   text-align: right;
-  overflow-wrap: anywhere; /* long seat lists won't break layout */
+  overflow-wrap: anywhere;
 }
 
 .seats-page .summary-total{
   margin-top: 6px;
   padding-top: 14px;
 }
-
-/* =========================
-   Legend (straight + centered as a block)
-   ========================= */
 
 .seats-page .seats-legend{
   width: 100%;
@@ -591,24 +519,19 @@ main.container{
   gap: 12px;
 }
 
-/* Each legend row: fixed swatch column + text column */
 .seats-page .legend-item{
   display: grid;
   grid-template-columns: 44px auto;
   align-items: center;
   justify-content: start;
   gap: 12px;
-
-  /* IMPORTANT: same width for all rows -> straight edges */
-  width: 200px;        /* adjust 160–220 if you want */
+  width: 200px;
   max-width: 100%;
-
-  margin: 0;           /* no auto-centering per row */
+  margin: 0;
   color: #051c2e;
   font-weight: 700;
 }
 
-/* Swatch: identical size + perfect centering */
 .seats-page .legend-swatch{
   width: 32px;
   height: 32px;
@@ -620,19 +543,16 @@ main.container{
   font-size: 16px;
 }
 
-/* Available */
 .seats-page .legend-available{
   background: rgba(255,255,255,0.98);
   border: 2px solid var(--nav-text);
 }
 
-/* Selected */
 .seats-page .legend-selected{
   background: #9ed3d0;
   border: 2px solid rgba(0,0,0,0.35);
 }
 
-/* Taken */
 .seats-page .legend-taken{
   background: rgba(0,0,0,0.06);
   border: 2px dashed rgba(0,0,0,0.25);
@@ -644,7 +564,6 @@ main.container{
   white-space: nowrap;
 }
 
-/* ---- Seat map container (tight fit) ---- */
 .seats-page .seats-wrap{
   width: fit-content;
   max-width: 100%;
@@ -660,7 +579,6 @@ main.container{
   gap: 12px;
 }
 
-/* One airplane row */
 .seat-row{
   display: grid;
   justify-content: center;
@@ -668,32 +586,25 @@ main.container{
   column-gap: 10px;
 }
 
-/* Cell wrapper */
 .seat-cell{
   display: flex;
   justify-content: center;
 }
 
-/* ---- Aisle rules ---- */
-/* 4 columns: 2 | aisle | 2 */
 .seats-map.cols-4 .seat-row{ grid-template-columns: repeat(4, max-content); }
 .seats-map.cols-4 .seat-cell:nth-child(2){ margin-right: var(--aisle); }
 
-/* 6 columns: 3 | aisle | 3 */
 .seats-map.cols-6 .seat-row{ grid-template-columns: repeat(6, max-content); }
 .seats-map.cols-6 .seat-cell:nth-child(3){ margin-right: var(--aisle); }
 
-/* 9 columns: 3 | aisle | 3 | aisle | 3 */
 .seats-map.cols-9 .seat-row{ grid-template-columns: repeat(9, max-content); }
 .seats-map.cols-9 .seat-cell:nth-child(3),
 .seats-map.cols-9 .seat-cell:nth-child(6){ margin-right: var(--aisle); }
 
-/* If you ever use other column counts */
 .seats-map.cols-generic .seat-row{
   grid-template-columns: repeat(var(--cols, 6), max-content);
 }
 
-/* ---- Seat tiles ---- */
 .seat-tile{
   display: inline-flex;
   align-items: center;
@@ -728,7 +639,6 @@ main.container{
   border-color: rgba(0,0,0,0.35);
 }
 
-/* Taken seats */
 .seat-taken{
   display: inline-flex;
   align-items: center;
@@ -742,7 +652,6 @@ main.container{
   font-weight: 900;
 }
 
-/* Buttons under the map */
 .seats-page .seats-actions{
   margin-top: 14px;
   display: flex;
@@ -750,13 +659,9 @@ main.container{
   justify-content: center;
 }
 
-/* =========================
-   CREW CHECKBOX LIST (ADMIN)
-   ========================= */
-
 .crew-box{
   width: 100%;
-  max-height: 140px;          /* smaller height */
+  max-height: 140px;
   overflow-y: auto;
   border: 1px solid rgba(0,0,0,0.15);
   border-radius: 10px;
@@ -764,47 +669,37 @@ main.container{
   padding: 8px 10px;
 }
 
-/* each row becomes ONE line */
 .crew-item{
   display: flex;
   align-items: center;
   gap: 10px;
-
-  font-size: 14px;            /* smaller text */
+  font-size: 14px;
   font-weight: 500;
   color: #051c2e;
-
   padding: 6px 6px;
   border-radius: 8px;
   cursor: pointer;
-
-  white-space: nowrap;        /* ✅ keeps it in one line */
+  white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;    /* ✅ adds ... instead of wrap */
+  text-overflow: ellipsis;
 }
 
-/* hover highlight */
 .crew-item:hover{
   background: rgba(11,126,134,0.08);
 }
 
-/* checkbox smaller */
 .crew-item input{
   width: 16px;
   height: 16px;
   flex: 0 0 auto;
 }
 
-/* text takes the remaining width */
 .crew-item span{
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* =========================
-   RESPONSIVE
-   ========================= */
 @media (max-width: 900px){
   /* keep on same line */
   .board-search{ grid-template-columns: 1.2fr 1.2fr 1fr auto; }
@@ -816,9 +711,7 @@ main.container{
 }
 
 @media (max-width: 700px){
-  .board-search{
-    gap: 8px;
-  }
+  .board-search{ gap: 8px; }
 
   .board-field input{
     height: 36px;
@@ -826,10 +719,7 @@ main.container{
     padding: 0 10px;
   }
 
-  .board-field label{
-    font-size: 11px;
-  }
-}
+  .board-field label{ font-size: 11px; }
 
   .seat-tile, .seat-taken{
     min-width: var(--seat);
@@ -850,17 +740,15 @@ main.container{
   align-items: end;
 }
 
-/* Make each input take full column width */
 .board form.admin-filter input,
 .board form.admin-filter select{
   width: 100%;
 }
 
-/* Put buttons on the right under the 3 fields */
 .admin-filter-actions{
-  grid-column: 1 / -1;       /* spans all columns */
+  grid-column: 1 / -1;
   display: flex;
-  justify-content: center;   /* or flex-end if you want right aligned */
+  justify-content: center;
   gap: 10px;
   margin-top: 6px;
   margin-bottom: 25px;
@@ -869,8 +757,8 @@ main.container{
 .admin-stats{
   display:flex;
   gap:20px;
-  justify-content:center;   /* center the row */
-  flex-wrap:nowrap;         /* keep in one line */
+  justify-content:center;
+  flex-wrap:nowrap;
   margin: 14px 0;
 }
 
@@ -893,27 +781,26 @@ main.container{
 .admin-actions{
   display:flex;
   gap:50px;
-  justify-content:center;   /* ✅ centered row */
-  flex-wrap:nowrap;         /* keep in one line */
+  justify-content:center;
+  flex-wrap:nowrap;
   margin-top: 10px;
 }
 
 .admin-box{
-  margin-top: 22px;   /* space between the 2 containers */
+  margin-top: 22px;
 }
 
 .form .cabin-card b{
-  display: block;          /* IMPORTANT so margins work */
-  margin-top: -6px;        /* moves "Economy/Business" a bit higher */
-  margin-bottom: 14px;     /* bigger gap before "Rows" */
+  display: block;
+  margin-top: -6px;
+  margin-bottom: 14px;
 }
 
-/* Override the global rule `.form label { margin-bottom:-4px }` only here */
 .form .cabin-card label{
   display: block;
   margin-bottom: 8px;
 }
-
+/*
 .admin-charts{
   margin-top: 26px;
   display: flex;
@@ -932,17 +819,15 @@ main.container{
   display: block;
   border-radius: 12px;
 }
-
-/* =========================
-   ADMIN DASHBOARD LAYOUT
-   ========================= */
-
+*/
+/*
 .dash-wrap{
   width: min(1200px, 95vw);
   margin: 0 auto;
   padding-bottom: 40px;
 }
-
+*/
+/*
 .dash-title{
   text-align: center;
   margin: 10px 0 14px;
@@ -951,42 +836,13 @@ main.container{
   color: #0b2a3a;
   letter-spacing: 0.3px;
 }
-
-/* You already have admin-stats/admin-stat styles in your CSS :contentReference[oaicite:1]{index=1} */
-
-.dash-grid{
-  display: grid;
-  gap: 26px;
-  align-items: start;
-  margin-top: 20px;
-}
-
-/* Two-column grid (like your screenshots) */
-.dash-grid-2{
-  grid-template-columns: 1.15fr 1fr;
-}
-
-/* second big section: keep similar proportions */
-.dash-grid-2b{
-  margin-top: 26px;
-}
-
+*/
+/*
 .dash-stack{
   display: grid;
   gap: 26px;
 }
 
-/* Card that holds each graph */
-.dash-card{
-  background: rgba(255,255,255,0.92);
-  border-radius: 18px;
-  padding: 14px;
-  box-shadow: 0 14px 30px rgba(0,0,0,0.18);
-  overflow: hidden; /* IMPORTANT for rounded corners on image */
-  position: relative;
-}
-
-/* Graph image */
 .dash-img{
   width: 100%;
   height: auto;
@@ -994,75 +850,27 @@ main.container{
   border-radius: 14px;
   cursor: zoom-in;
 }
-
-/* =========================
-   QUOTE CARD
-   ========================= */
-
-.quote-card{
-  background: rgba(255,255,255,0.92);
-  border-radius: 22px;
-  padding: 26px 24px;
-  box-shadow: 0 14px 30px rgba(0,0,0,0.18);
-  position: relative;
-  overflow: hidden;
-  min-height: 150px;
-}
-
-.quote-text{
-  text-align: center;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  color: #0b7e86;
-  font-size: 26px;
-  line-height: 1.25;
-}
-
-.quote-mark{
-  position: absolute;
-  font-size: 80px;
-  font-weight: 900;
-  color: rgba(11,126,134,0.85);
-  line-height: 1;
-}
-
-.quote-mark-top{
-  top: 6px;
-  right: 16px;
-}
-
-.quote-mark-bottom{
-  bottom: -10px;
-  left: 16px;
-}
-
-/* =========================
-   RESPONSIVE
-   ========================= */
+*/
 @media (max-width: 980px){
   .dash-grid-2{
     grid-template-columns: 1fr;
   }
 }
-
-/* =========================
-   DASHBOARD GRID (clean + responsive)
-   ========================= */
+/*
 .dash-grid{
   display: grid;
   gap: 26px;
+  align-items: start;
   margin-top: 20px;
 }
-
-/* 2 columns on desktop, 1 on mobile */
+*/
+/*
 .dash-grid-2{
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.15fr 1fr;
 }
 
-@media (max-width: 980px){
-  .dash-grid-2{
-    grid-template-columns: 1fr;
-  }
+.dash-grid-2b{
+  margin-top: 26px;
 }
 
 .dash-card{
@@ -1071,25 +879,15 @@ main.container{
   padding: 14px;
   box-shadow: 0 14px 30px rgba(0,0,0,0.18);
   overflow: hidden;
+    position: relative;
 }
 
-.dash-img{
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 14px; /* rounded image edges */
-}
-
-/* Make the image clickable without ugly button styles */
 .dash-zoom{
   all: unset;
   display: block;
   cursor: zoom-in;
 }
 
-/* =========================
-   FULLSCREEN MODAL
-   ========================= */
 .img-modal{
   position: fixed;
   inset: 0;
@@ -1145,14 +943,12 @@ main.container{
 .img-modal-close:hover{
   background: rgba(0,0,0,0.14);
 }
-
-/* Admin graphs cards */
+*/
 .admin-box .card{
   border-radius: 18px;
-  overflow: hidden;   /* ✅ this makes the image corners clip */
+  overflow: hidden;
 }
 
-/* Make the image fill nicely */
 .admin-box .card img{
   width: 100%;
   display: block;
