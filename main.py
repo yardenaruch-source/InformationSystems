@@ -5,7 +5,6 @@ from datetime import datetime, date, timedelta, time
 from urllib.parse import urlparse, urljoin
 import re
 import os
-from datetime import datetime
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")  # important on servers
@@ -1741,7 +1740,7 @@ def admin_dashboard():
     static_dir = os.path.join(app.root_path, "static")
     os.makedirs(static_dir, exist_ok=True)
 
-    emp_plot_filename = f"employee_hours_{int(time.time())}.png"
+    emp_plot_filename = f"employee_hours_{int(datetime.now().timestamp())}.png"
     emp_plot_path = os.path.join(static_dir, emp_plot_filename)
 
     plt.savefig(emp_plot_path, dpi=200, bbox_inches="tight")
