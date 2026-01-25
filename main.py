@@ -1651,6 +1651,45 @@ def admin_dashboard():
         """)
         rows = cur.fetchall()
 
+        # --- employee hours (Query 3) ---
+        cur.execute("""
+            WITH employee_flights AS (
+              SELECT
+                p.employee_id,
+                fr.flight_duration
+              FROM Pilot p
+              LEFT JOIN Pilots_in_flights pf
+                ON pf.employee_id = p.employee_id
+              LEFT JOIN Flight f
+                ON f.flight_id = pf.flight_id
+               AND f.flight_status = 'Completed'
+              LEFT JOIN Flight_route fr
+                ON fr.route_id = f.route_id
+
+              UNION ALL
+
+              SELECT
+                fa.employee_id,
+                fr.flight_duration
+              FROM Flight_attendant fa
+              LEFT JOIN Flight_attendants_in_flights faf
+                ON faf.employee_id = fa.employee_id
+              LEFT JOIN Flight f
+                ON f.flight_id = faf.flight_id
+               AND f.flight_status = 'Completed'
+              LEFT JOIN Flight_route fr
+                ON fr.route_id = f.route_id
+            )
+            SELECT
+              employee_id,
+              ROUND(SUM(CASE WHEN flight_duration > 360 THEN flight_duration ELSE 0 END) / 60, 2) AS long_flight_hours,
+              ROUND(SUM(CASE WHEN flight_duration <= 360 THEN flight_duration ELSE 0 END) / 60, 2) AS short_flight_hours
+            FROM employee_flights
+            GROUP BY employee_id
+            ORDER BY employee_id;
+        """)
+        emp_rows = cur.fetchall()
+
     months = [r["purchase_month"] for r in rows]
     rates = [float(r["customer_cancellation_rate"] or 0) for r in rows]
 
@@ -1669,12 +1708,52 @@ def admin_dashboard():
     plt.savefig(plot_path, dpi=200, bbox_inches="tight")
     plt.close()
 
+    df = pd.DataFrame(emp_rows)
+
+    # If there are employees with no completed flights, the query can return NULLs -> make them 0
+    df["long_flight_hours"] = df["long_flight_hours"].fillna(0).astype(float)
+    df["short_flight_hours"] = df["short_flight_hours"].fillna(0).astype(float)
+
+    df["total_hours"] = df["long_flight_hours"] + df["short_flight_hours"]
+    df_plot = df.sort_values("total_hours", ascending=True)
+
+    plt.figure(figsize=(10, max(3, 0.35 * len(df_plot))))
+
+    plt.barh(
+        df_plot["employee_id"].astype(str),
+        df_plot["short_flight_hours"],
+        label="Short flight hours"
+    )
+
+    plt.barh(
+        df_plot["employee_id"].astype(str),
+        df_plot["long_flight_hours"],
+        left=df_plot["short_flight_hours"],
+        label="Long flight hours"
+    )
+
+    plt.title("Flight Hours per Employee")
+    plt.xlabel("Hours")
+    plt.ylabel("Employee ID")
+    plt.legend()
+    plt.tight_layout()
+
+    static_dir = os.path.join(app.root_path, "static")
+    os.makedirs(static_dir, exist_ok=True)
+
+    emp_plot_filename = f"employee_hours_{int(time.time())}.png"
+    emp_plot_path = os.path.join(static_dir, emp_plot_filename)
+
+    plt.savefig(emp_plot_path, dpi=200, bbox_inches="tight")
+    plt.close()
+
     return render_template(
         "admin_dashboard.html",
         planes_count=planes_count,
         routes_count=routes_count,
         flights_count=flights_count,
-        cancel_plot="cancellation_rate_by_month.png"
+        cancel_plot="cancellation_rate_by_month.png",
+        employee_hours_plot = emp_plot_filename
     )
 
 @app.route("/admin/add/employees", methods=["GET", "POST"])
