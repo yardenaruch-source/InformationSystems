@@ -1682,7 +1682,6 @@ def admin_dashboard():
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(plot_path, dpi=200, bbox_inches="tight")
-    print("Saved cancel plot to:", plot_path)
     plt.close()
 
     df = pd.DataFrame(emp_rows)
@@ -1795,6 +1794,9 @@ def admin_dashboard():
 
     plt.savefig(top5_plot_path, dpi=200, bbox_inches="tight")
     plt.close()
+
+    app.logger.info("Static dir: %s", static_dir)
+    app.logger.info("Static files now: %s", os.listdir(static_dir)[-10:])
 
     return render_template(
         "admin_dashboard.html",
