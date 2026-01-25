@@ -1146,3 +1146,15 @@ main.container{
   background: rgba(0,0,0,0.14);
 }
 
+/* Admin graphs cards */
+.admin-box .card{
+  border-radius: 18px;
+  overflow: hidden;   /* ✅ this makes the image corners clip */
+}
+
+/* Make the image fill nicely */
+.admin-box .card img{
+  width: 100%;
+  display: block;
+  height: auto;
+}
