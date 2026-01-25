@@ -732,11 +732,24 @@ main.container{
   max-width: 700px;
   margin: 0 auto;
   padding-left: 0;
-
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 12px 14px;
   align-items: end;
+}
+
+.board form.admin-filter label[for="flight_id"]{ grid-column: 1; grid-row: 1; }
+.board form.admin-filter #flight_id{            grid-column: 1; grid-row: 2; }
+
+.board form.admin-filter label[for="status"]{   grid-column: 2; grid-row: 1; }
+.board form.admin-filter #status{              grid-column: 2; grid-row: 2; }
+
+.board form.admin-filter label[for="takeoff_date"]{ grid-column: 3; grid-row: 1; }
+.board form.admin-filter #takeoff_date{            grid-column: 3; grid-row: 2; }
+
+.board form.admin-filter .admin-filter-actions{
+  grid-column: 1 / -1;
+  grid-row: 3;
 }
 
 .board form.admin-filter input,
