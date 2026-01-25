@@ -1681,7 +1681,7 @@ def admin_dashboard():
     plt.ylabel("Cancellation Rate (%)")
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(plot_path, dpi=200, bbox_inches="tight")
+    plt.savefig(cancel_plot_path, dpi=200, bbox_inches="tight")
     plt.close()
 
     df = pd.DataFrame(emp_rows)
