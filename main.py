@@ -650,17 +650,22 @@ def generate_order_id(cur, max_tries=20):
 
 def cleanup_expired_pending_orders():
     with db_cursor() as cur:
+        # 1) find orders that should be removed (never paid)
         cur.execute("""
             SELECT order_id
             FROM Orders
-            WHERE order_status = 'Pending'
-              AND date_of_purchase < (NOW() - INTERVAL 15 MINUTE)
+            WHERE
+              (order_status = 'Pending' AND date_of_purchase < (NOW() - INTERVAL 15 MINUTE))
+              OR
+              (order_status = 'Cancelled by customer' AND date_of_purchase < (NOW() - INTERVAL 15 MINUTE))
         """)
         old_orders = [r["order_id"] for r in cur.fetchall()]
 
+        # 2) release seats + delete the orders
         for oid in old_orders:
             cur.execute("UPDATE Seat SET order_id = NULL WHERE order_id = %s", (oid,))
             cur.execute("DELETE FROM Orders WHERE order_id = %s", (oid,))
+
 
 
 @app.route("/seats/<flight_id>", methods=["GET", "POST"])
