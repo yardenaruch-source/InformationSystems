@@ -756,12 +756,13 @@ def tickets():
                 JOIN Flight f ON f.flight_id = o.flight_id
                 JOIN Flight_route r ON r.route_id = f.route_id
                 WHERE o.order_id = %s
+                  AND o.order_status = 'Active'
                   AND (o.guest_email = %s OR o.reg_customer_email = %s)
             """, (order_id, email, email))
             order = cur.fetchone()
 
             if not order:
-                flash("No matching order found for that code + email.", "error")
+                flash("No active order found for that code + email.", "error")
                 return render_template("tickets.html")
 
             cur.execute("""
