@@ -455,7 +455,7 @@ WITH RECURSIVE
             ),
             0
           ) AS start_row
-    FROM cabin_class cc
+    FROM Cabin_class cc
   ),
   cc3 AS (
     SELECT
@@ -471,7 +471,7 @@ WITH RECURSIVE
     SELECT MAX(total_rows) AS mx
     FROM (
       SELECT plane_id, SUM(rows_num) AS total_rows
-      FROM cabin_class
+      FROM Cabin_class
       GROUP BY plane_id
     ) t
   ),
@@ -485,7 +485,7 @@ WITH RECURSIVE
     SELECT 1 AS n
     UNION ALL
     SELECT n + 1 FROM c
-    WHERE n < (SELECT MAX(columns_num) FROM cabin_class)
+    WHERE n < (SELECT MAX(columns_num) FROM Cabin_class)
   )
 SELECT
   f.flight_id,
