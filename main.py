@@ -1568,19 +1568,25 @@ def admin_dashboard():
         cur.execute("SELECT COUNT(*) AS n FROM Flight")
         flights_count = cur.fetchone()["n"]
 
-        # Cancellation rate per month
+        # Costumer cancellation rate per month
         cur.execute("""
             SELECT
               DATE_FORMAT(date_of_purchase, '%Y-%m') AS purchase_month,
-              ROUND(
-                100 * SUM(order_status = 'Cancelled by customer') / NULLIF(COUNT(*), 0),
-                2
+              CAST(
+                ROUND(
+                  100.0 * SUM(CASE WHEN order_status = 'Cancelled by customer' THEN 1 ELSE 0 END)
+                  / NULLIF(COUNT(*), 0),
+                  2
+                ) AS DECIMAL(10,2)
               ) AS customer_cancellation_rate
             FROM Orders
+            WHERE date_of_purchase IS NOT NULL
             GROUP BY purchase_month
             ORDER BY purchase_month;
         """)
         rows = cur.fetchall()
+        months = [r["purchase_month"] for r in rows]
+        rates = [float(r["customer_cancellation_rate"] or 0) for r in rows]
 
         # Flight hours per employee hours
         cur.execute("""
@@ -1661,9 +1667,6 @@ def admin_dashboard():
             LIMIT 5;
         """)
         top5_rows = cur.fetchall()
-
-    months = [r["purchase_month"] for r in rows]
-    rates = [float(r["customer_cancellation_rate"] or 0) for r in rows]
 
     # Graphs
     static_dir = os.path.join(app.root_path, "static")
