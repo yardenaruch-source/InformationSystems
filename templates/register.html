@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}הרשמה - FLYTAU{% endblock %}
+{% block title %}Register{% endblock %}
 {% block flashes %}{% endblock %}
 
 {% block content %}
@@ -78,7 +78,6 @@
     inp.placeholder = "e.g. 054-1234567";
     inp.required = true;
 
-    /* ✅ add validation here */
     inp.pattern = "^[0-9-]+$";
     inp.inputMode = "numeric";
     inp.title = "Only digits and '-' are allowed";

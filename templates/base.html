@@ -17,7 +17,6 @@
             <nav class="nav">
 
                 {% if session.get("admin_employee_id") %}
-                    <!-- ADMIN NAV -->
                     <a href="{{ url_for('admin_flights') }}"
                        class="{% if request.endpoint == 'admin_flights' %}active{% endif %}">
                         Flights

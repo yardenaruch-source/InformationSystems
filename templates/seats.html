@@ -17,7 +17,6 @@
 
   <div class="seats-layout">
 
-    <!-- LEFT COLUMN -->
     <aside class="seats-side">
       <section class="board seats-header">
         <h2 class="seats-title">Select seats<br>{{ class_type }} (Flight {{ flight_id }})</h2>
@@ -64,7 +63,6 @@
       </section>
     </aside>
 
-    <!-- RIGHT COLUMN -->
     <main class="seats-main">
       <form method="post">
         <input type="hidden" name="class_type" value="{{ class_type }}"/>
@@ -110,10 +108,8 @@
     const seatCountEl = document.getElementById("seatCount");
     const seatTotalEl = document.getElementById("seatTotal");
 
-    // Read price once (e.g. "1200.00" or "1200.00 ₪")
     const price = parseFloat((priceEl?.textContent || "0").replace(/[^\d.]/g, "")) || 0;
 
-    // Convert "4-1" -> "4A"
     function toSeatLabel(value) {
       const [rStr, cStr] = String(value).split("-");
       const r = parseInt(rStr, 10);
@@ -121,16 +117,13 @@
 
       if (!Number.isFinite(r) || !Number.isFinite(c)) return String(value);
 
-      // 1->A ... 26->Z
       if (c >= 1 && c <= 26) {
         return `${r}${String.fromCharCode(64 + c)}`;
       }
 
-      // Fallback if you ever have >26 columns
       return `${r}-${c}`;
     }
 
-    // Sort by row then column
     function seatSortKey(value) {
       const [rStr, cStr] = String(value).split("-");
       const r = parseInt(rStr, 10);
@@ -156,14 +149,12 @@
       seatTotalEl.textContent = (labels.length * price).toFixed(2) + " ₪";
     }
 
-    // Update whenever a seat checkbox changes
     document.addEventListener("change", (e) => {
       if (e.target && e.target.classList && e.target.classList.contains("seat-check")) {
         updateSummary();
       }
     });
 
-    // Initial load
     updateSummary();
   })();
 </script>

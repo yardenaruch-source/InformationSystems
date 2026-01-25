@@ -85,7 +85,7 @@
 
       <p style="text-align: center;">Long flight: 3 Pilots + 6 Flight attendants<br>Short flight: 2 Pilots + 3 Flight attendants</p>
 
-    <!-- ✅ Pilots checkboxes -->
+    <!-- Pilots checkboxes -->
     <div style="margin-bottom:16px;">
       <label class="field-label">Pilots (select multiple)</label>
       <div class="crew-box">
@@ -101,7 +101,7 @@
       </div>
     </div>
 
-    <!-- ✅ Flight attendants checkboxes -->
+    <!-- Flight attendants checkboxes -->
     <div style="margin-bottom:16px;">
       <label class="field-label">Flight Attendants (select multiple)</label>
       <div class="crew-box">
@@ -177,27 +177,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const econ = layoutMap?.[pid]?.["Economy"];
     const bus  = layoutMap?.[pid]?.["Business"];
 
-    // Economy always
     setVal("econ_rows", econ?.rows);
     setVal("econ_cols", econ?.cols);
 
-    // ✅ Business is optional
     const hasBusiness = !!bus;
 
     if (hasBusiness) {
       setVal("bus_rows", bus?.rows);
       setVal("bus_cols", bus?.cols);
 
-      if (businessCard) businessCard.style.display = ""; // show
-      if (busPriceEl) busPriceEl.disabled = false;       // allow input
+      if (businessCard) businessCard.style.display = "";
+      if (busPriceEl) busPriceEl.disabled = false;
     } else {
       setVal("bus_rows", "-");
       setVal("bus_cols", "-");
 
-      if (businessCard) businessCard.style.display = "none"; // hide
+      if (businessCard) businessCard.style.display = "none";
       if (busPriceEl) {
-        busPriceEl.value = "";        // clear so it won’t submit old value
-        busPriceEl.disabled = true;   // prevent validation + prevent submit
+        busPriceEl.value = "";
+        busPriceEl.disabled = true;
       }
     }
   }
@@ -238,7 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const rid = routeSelect.value;
     const url = new URL(window.location.href);
     url.searchParams.set("route_id", rid);
-    window.location.href = url.toString();   // reload so server returns filtered crew
+    window.location.href = url.toString();
   });
 });
 </script>
