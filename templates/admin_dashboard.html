@@ -40,12 +40,17 @@
   </div>
 
   <div class="card" style="margin-top:24px; padding:16px;">
-  <img
-    src="{{ url_for('static', filename=flights_by_hour_plot) }}"
-    alt="Flights by takeoff hour"
-    style="max-width:100%; height:auto; display:block; margin:0 auto;"
-  >
-</div>
+    <img
+      src="{{ url_for('static', filename=flights_by_hour_plot) }}"
+      alt="Flights by takeoff hour"
+      style="max-width:100%; height:auto; display:block; margin:0 auto;"
+    >
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <img src="{{ url_for('static', filename=flights_completed_plot) }}"
+         style="width:100%; max-width:900px; display:block; margin:auto;">
+  </div>
 
 </section>
 

@@ -1703,6 +1703,18 @@ def admin_dashboard():
         """)
         hour_rows = cur.fetchall()
 
+        # --- flights completed per month ---
+        cur.execute("""
+            SELECT
+              DATE_FORMAT(f.takeoff_date, '%Y-%m') AS month,
+              COUNT(*) AS flights_completed
+            FROM Flight f
+            WHERE f.flight_status = 'Completed'
+            GROUP BY month
+            ORDER BY month;
+        """)
+        completed_rows = cur.fetchall()
+
     months = [r["purchase_month"] for r in rows]
     rates = [float(r["customer_cancellation_rate"] or 0) for r in rows]
 
@@ -1785,6 +1797,30 @@ def admin_dashboard():
     plt.savefig(hour_plot_path, dpi=200, bbox_inches="tight")
     plt.close()
 
+    df_completed = pd.DataFrame(completed_rows)
+
+    # make sure sorted
+    df_completed = df_completed.sort_values("month")
+
+    plt.figure(figsize=(10, 5))
+    plt.bar(
+        df_completed["month"],
+        df_completed["flights_completed"],
+        width=0.5
+    )
+
+    plt.title("Flights Completed per Month")
+    plt.xlabel("Month")
+    plt.ylabel("Number of Flights Completed")
+    plt.xticks(df_completed["month"], rotation=45)
+    plt.tight_layout()
+
+    completed_plot_filename = f"flights_completed_per_month_{int(datetime.now().timestamp())}.png"
+    completed_plot_path = os.path.join(static_dir, completed_plot_filename)
+
+    plt.savefig(completed_plot_path, dpi=200, bbox_inches="tight")
+    plt.close()
+
     return render_template(
         "admin_dashboard.html",
         planes_count=planes_count,
@@ -1792,7 +1828,8 @@ def admin_dashboard():
         flights_count=flights_count,
         cancel_plot="cancellation_rate_by_month.png",
         employee_hours_plot = emp_plot_filename,
-        flights_by_hour_plot=hour_plot_filename
+        flights_by_hour_plot=hour_plot_filename,
+        flights_completed_plot=completed_plot_filename
     )
 
 @app.route("/admin/add/employees", methods=["GET", "POST"])
