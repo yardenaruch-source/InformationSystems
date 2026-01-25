@@ -1206,8 +1206,8 @@ def admin_add_flight():
         return redirect(url_for("admin_login"))
 
     with db_cursor() as cur:
-        cur.execute("SELECT plane_id FROM Plane ORDER BY plane_id")
-        planes = [r["plane_id"] for r in cur.fetchall()]
+        cur.execute("SELECT plane_id, plane_size FROM Plane ORDER BY plane_id")
+        plane_rows = cur.fetchall()
 
         cur.execute("""
             SELECT route_id, origin_airport, destination_airport, flight_duration
@@ -1274,12 +1274,23 @@ def admin_add_flight():
 
         return pilots_filtered, attendants_filtered, is_long, minutes
 
+    def filter_planes_for_long(is_long: bool):
+        if is_long:
+            return [p["plane_id"] for p in plane_rows if p["plane_size"] == "Large"]
+        return [p["plane_id"] for p in plane_rows]
+
     if routes:
         selected_route_id = request.args.get("route_id") or str(routes[0]["route_id"])
     else:
         selected_route_id = request.args.get("route_id") or ""
 
     pilots, attendants, is_long_flight, duration_minutes = filter_crew_for_route(selected_route_id)
+
+    # For long flights show only Large planes
+    if is_long_flight:
+        planes = [p["plane_id"] for p in plane_rows if p["plane_size"] == "Large"]
+    else:
+        planes = [p["plane_id"] for p in plane_rows]
 
     if request.method == "POST":
         flight_id = request.form.get("flight_id", "").strip().upper()
@@ -1297,6 +1308,8 @@ def admin_add_flight():
 
         pilots, attendants, is_long_flight, duration_minutes = filter_crew_for_route(route_id)
         selected_route_id = str(route_id)
+
+        planes = filter_planes_for_long(is_long_flight)
 
         def render_with_error(msg):
             flash(msg, "error")
@@ -1324,6 +1337,14 @@ def admin_add_flight():
                     return render_with_error(
                         f"Flight ID '{flight_id}' already exists. Please choose a different ID."
                     )
+
+                cur.execute("SELECT plane_size FROM Plane WHERE plane_id = %s", (plane_id,))
+                row = cur.fetchone()
+                if not row:
+                    return render_with_error("Plane not found.")
+
+                if is_long_flight and row["plane_size"] != "Large":
+                    return render_with_error("Long flights require a Large plane.")
 
                 new_start_dt = datetime.strptime(f"{takeoff_date} {takeoff_time}", "%Y-%m-%d %H:%M")
                 new_end_dt = new_start_dt + timedelta(minutes=int(duration_minutes))
