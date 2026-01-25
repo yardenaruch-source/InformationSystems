@@ -80,9 +80,9 @@ main.container{
 .nav{
   display: flex;
   align-items: center;
-  gap: 22px;           /* spacing between buttons */
+  gap: 22px;
   flex-wrap: nowrap;
-  margin-left: 10px;   /* pushes links a bit away from logo */
+  margin-left: 10px;
   width: 100%;
   white-space: nowrap;
 }
@@ -253,13 +253,12 @@ main.container{
   background: var(--nav-text-hover);
   border-color: var(--nav-text-hover);
 }
-/*
+
 .btn-outline{
   background: transparent;
   border-color: rgba(255,255,255,0.18);
   color: var(--text);
 }
-*/
 
 .board{
   width: min(1080px, 92vw);
@@ -389,7 +388,7 @@ main.container{
   font-size: 13px;
   vertical-align: middle;
 }
-/*
+
 .book-btn{
   display: inline-block;
   padding: 8px 14px;
@@ -399,7 +398,7 @@ main.container{
   text-decoration: none;
   font-weight: 700;
 }
-*/
+
 .book-btn:hover{
   filter: brightness(0.96);
 }
@@ -800,7 +799,7 @@ main.container{
   display: block;
   margin-bottom: 8px;
 }
-/*
+
 .admin-charts{
   margin-top: 26px;
   display: flex;
@@ -819,15 +818,13 @@ main.container{
   display: block;
   border-radius: 12px;
 }
-*/
-/*
+
 .dash-wrap{
   width: min(1200px, 95vw);
   margin: 0 auto;
   padding-bottom: 40px;
 }
-*/
-/*
+
 .dash-title{
   text-align: center;
   margin: 10px 0 14px;
@@ -836,8 +833,7 @@ main.container{
   color: #0b2a3a;
   letter-spacing: 0.3px;
 }
-*/
-/*
+
 .dash-stack{
   display: grid;
   gap: 26px;
@@ -850,21 +846,20 @@ main.container{
   border-radius: 14px;
   cursor: zoom-in;
 }
-*/
+
 @media (max-width: 980px){
   .dash-grid-2{
     grid-template-columns: 1fr;
   }
 }
-/*
+
 .dash-grid{
   display: grid;
   gap: 26px;
   align-items: start;
   margin-top: 20px;
 }
-*/
-/*
+
 .dash-grid-2{
   grid-template-columns: 1.15fr 1fr;
 }
@@ -943,7 +938,7 @@ main.container{
 .img-modal-close:hover{
   background: rgba(0,0,0,0.14);
 }
-*/
+
 .admin-box .card{
   border-radius: 18px;
   overflow: hidden;
