@@ -1642,20 +1642,17 @@ def admin_dashboard():
             SELECT
               DATE_FORMAT(date_of_purchase, '%Y-%m') AS purchase_month,
               ROUND(
-                100 * SUM(CASE
-                            WHEN order_status = 'Cancelled by customer'
-                            THEN 1 ELSE 0
-                          END) / COUNT(*), 2
+                100 * SUM(order_status = 'Cancelled by customer') / NULLIF(COUNT(*), 0),
+                2
               ) AS customer_cancellation_rate
             FROM Orders
-            GROUP BY DATE_FORMAT(date_of_purchase, '%Y-%m')
+            GROUP BY purchase_month
             ORDER BY purchase_month;
         """)
         rows = cur.fetchall()
 
-    # rows -> lists for plotting
     months = [r["purchase_month"] for r in rows]
-    rates  = [float(r["customer_cancellation_rate"]) for r in rows]
+    rates = [float(r["customer_cancellation_rate"] or 0) for r in rows]
 
     # save plot into static/
     static_dir = os.path.join(app.root_path, "static")
