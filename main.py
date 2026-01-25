@@ -588,7 +588,8 @@ def purchase_history():
         "Cancelled by system",
     }
 
-    where = ["o.reg_customer_email = %s"]
+    where = ["o.reg_customer_email = %s", "o.order_status IN ('Active','Completed','Cancelled by customer')"]
+
     params = [email]
 
     if status:
@@ -659,11 +660,8 @@ def cleanup_expired_pending_orders():
 
         for oid in old_orders:
             cur.execute("UPDATE Seat SET order_id = NULL WHERE order_id = %s", (oid,))
-            cur.execute("""
-                UPDATE Orders
-                SET order_status = 'Cancelled by customer'
-                WHERE order_id = %s
-            """, (oid,))
+            cur.execute("DELETE FROM Orders WHERE order_id = %s", (oid,))
+
 
 @app.route("/seats/<flight_id>", methods=["GET", "POST"])
 def seats(flight_id):
