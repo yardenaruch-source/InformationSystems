@@ -954,8 +954,6 @@ def cleanup_expired_pending_orders():
             FROM Orders
             WHERE
               (order_status = 'Pending' AND date_of_purchase < (NOW() - INTERVAL 15 MINUTE))
-              OR
-              (order_status = 'Cancelled by customer' AND date_of_purchase < (NOW() - INTERVAL 15 MINUTE))
         """)
         old_orders = [r["order_id"] for r in cur.fetchall()]
 
@@ -1572,15 +1570,14 @@ def admin_dashboard():
         cur.execute("""
             SELECT
               DATE_FORMAT(date_of_purchase, '%Y-%m') AS purchase_month,
-              CAST(
-                ROUND(
-                  100.0 * SUM(CASE WHEN order_status = 'Cancelled by customer' THEN 1 ELSE 0 END)
-                  / NULLIF(COUNT(*), 0),
-                  2
-                ) AS DECIMAL(10,2)
+              ROUND(
+                100.0 * SUM(order_status = 'Cancelled by customer') /
+                NULLIF(COUNT(*), 0),
+                2
               ) AS customer_cancellation_rate
             FROM Orders
             WHERE date_of_purchase IS NOT NULL
+              AND order_status IN ('Active','Completed','Cancelled by customer','Cancelled by system')
             GROUP BY purchase_month
             ORDER BY purchase_month;
         """)
