@@ -32,13 +32,20 @@
   </div>
 
   <div class="card" style="margin-top:24px; padding:16px;">
-    <h3 style="margin:0 0 12px 0;">Employee Flight Hours</h3>
     <img
       src="{{ url_for('static', filename=employee_hours_plot) }}"
       alt="Employee flight hours"
       style="max-width:100%; height:auto; display:block; margin:0 auto;"
     >
   </div>
+
+  <div class="card" style="margin-top:24px; padding:16px;">
+  <img
+    src="{{ url_for('static', filename=flights_by_hour_plot) }}"
+    alt="Flights by takeoff hour"
+    style="max-width:100%; height:auto; display:block; margin:0 auto;"
+  >
+</div>
 
 </section>
 

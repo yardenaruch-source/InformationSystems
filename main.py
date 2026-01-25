@@ -1689,6 +1689,20 @@ def admin_dashboard():
         """)
         emp_rows = cur.fetchall()
 
+        # --- flights by takeoff hour ---
+        cur.execute("""
+            SELECT
+              HOUR(f.takeoff_time) AS takeoff_hour,
+              COUNT(*) AS flights_count
+            FROM Flight f
+            WHERE
+              TIMESTAMP(f.takeoff_date, f.takeoff_time) < NOW()
+              AND f.flight_status IN ('Completed','Full')
+            GROUP BY HOUR(f.takeoff_time)
+            ORDER BY takeoff_hour;
+        """)
+        hour_rows = cur.fetchall()
+
     months = [r["purchase_month"] for r in rows]
     rates = [float(r["customer_cancellation_rate"] or 0) for r in rows]
 
@@ -1746,13 +1760,39 @@ def admin_dashboard():
     plt.savefig(emp_plot_path, dpi=200, bbox_inches="tight")
     plt.close()
 
+    df_hour = pd.DataFrame(hour_rows)
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(
+        df_hour["takeoff_hour"],
+        df_hour["flights_count"],
+        marker="o",
+        linewidth=2
+    )
+
+    plt.title("Number of Flights by Takeoff Hour")
+    plt.xlabel("Takeoff Hour")
+    plt.ylabel("Number of Flights")
+    plt.xticks(df_hour["takeoff_hour"])
+    plt.tight_layout()
+
+    static_dir = os.path.join(app.root_path, "static")
+    os.makedirs(static_dir, exist_ok=True)
+
+    hour_plot_filename = f"flights_by_takeoff_hour_{int(datetime.now().timestamp())}.png"
+    hour_plot_path = os.path.join(static_dir, hour_plot_filename)
+
+    plt.savefig(hour_plot_path, dpi=200, bbox_inches="tight")
+    plt.close()
+
     return render_template(
         "admin_dashboard.html",
         planes_count=planes_count,
         routes_count=routes_count,
         flights_count=flights_count,
         cancel_plot="cancellation_rate_by_month.png",
-        employee_hours_plot = emp_plot_filename
+        employee_hours_plot = emp_plot_filename,
+        flights_by_hour_plot=hour_plot_filename
     )
 
 @app.route("/admin/add/employees", methods=["GET", "POST"])
