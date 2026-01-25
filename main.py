@@ -477,6 +477,48 @@ def customer_details(flight_id):
 
     return render_template("customer_details.html", flight_id=flight_id, next_url=next_url, form=form)
 
+def create_seats_for_flight(cur, flight_id: str, plane_id: str):
+    # get both cabin layouts
+    cur.execute("""
+        SELECT class_type, rows_num, columns_num
+        FROM Cabin_class
+        WHERE plane_id = %s
+    """, (plane_id,))
+    cabins = cur.fetchall()
+
+    layout = {c["class_type"]: (int(c["rows_num"]), int(c["columns_num"])) for c in cabins}
+
+    if "Economy" not in layout:
+        raise ValueError("Missing Economy layout for this plane")
+
+    has_business = "Business" in layout
+
+    econ_rows, econ_cols = layout["Economy"]
+    bus_rows, bus_cols = (0, 0)
+    if has_business:
+        bus_rows, bus_cols = layout["Business"]
+
+    # make sure no leftovers (important if you retry same flight_id)
+    cur.execute("DELETE FROM Seat WHERE flight_id = %s", (flight_id,))
+
+    # Business seats: rows 1..bus_rows
+    if has_business:
+        for r in range(1, bus_rows + 1):
+            for c in range(1, bus_cols + 1):
+                cur.execute("""
+                    INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
+                    VALUES (%s, %s, %s, %s, 'Business', NULL)
+                """, (flight_id, r, c, plane_id))
+
+    # Economy seats: start AFTER Business rows
+    econ_row_start = bus_rows + 1 if has_business else 1
+    for r in range(econ_row_start, econ_row_start + econ_rows):
+        for c in range(1, econ_cols + 1):
+            cur.execute("""
+                INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
+                VALUES (%s, %s, %s, %s, 'Economy', NULL)
+            """, (flight_id, r, c, plane_id))
+
 @app.route("/flight/<flight_id>")
 def flight_details(flight_id):
     with db_cursor() as cur:
@@ -682,7 +724,9 @@ def seats(flight_id):
                 # try to reserve seats (only if still free)
                 ok = True
                 for s in selected:
-                    r, c = s.split("-")
+                    r_str, c_str = s.split("-")
+                    r = int(r_str)
+                    c = int(c_str)
                     cur.execute("""
                         UPDATE Seat
                         SET order_id = %s
@@ -1388,6 +1432,8 @@ def admin_add_flight():
                     VALUES (%s, %s, %s, %s, %s, %s, 'Scheduled')
                 """, (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time))
 
+                create_seats_for_flight(cur, flight_id, plane_id)
+
                 # 6) Insert pricing
                 cur.execute("""
                     INSERT INTO Flight_Class_Pricing (flight_id, plane_id, class_type, price)
@@ -1399,27 +1445,6 @@ def admin_add_flight():
                         INSERT INTO Flight_Class_Pricing (flight_id, plane_id, class_type, price)
                         VALUES (%s, %s, 'Business', %s)
                     """, (flight_id, plane_id, float(bus_price)))
-
-                # 7) Seats (clear first to avoid duplicate PK on retry)
-                cur.execute("DELETE FROM Seat WHERE flight_id = %s", (flight_id,))
-
-                # Business seats: rows 1..bus_rows
-                if has_business:
-                    for r in range(1, bus_rows + 1):
-                        for c in range(1, bus_cols + 1):
-                            cur.execute("""
-                                INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
-                                VALUES (%s, %s, %s, %s, 'Business', NULL)
-                            """, (flight_id, r, c, plane_id))
-
-                # Economy seats: rows (bus_rows+1) .. (bus_rows+econ_rows)
-                econ_row_start = (bus_rows + 1) if has_business else 1
-                for r in range(econ_row_start, econ_row_start + econ_rows):
-                    for c in range(1, econ_cols + 1):
-                        cur.execute("""
-                            INSERT INTO Seat (flight_id, s_row, s_column, plane_id, class_type, order_id)
-                            VALUES (%s, %s, %s, %s, 'Economy', NULL)
-                        """, (flight_id, r, c, plane_id))
 
                 # 8) Crew links (replace existing if retry)
                 cur.execute("DELETE FROM Pilots_in_flights WHERE flight_id = %s", (flight_id,))
