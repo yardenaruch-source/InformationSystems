@@ -1637,40 +1637,47 @@ def admin_dashboard():
         cur.execute("SELECT COUNT(*) AS n FROM Flight")
         flights_count = cur.fetchone()["n"]
 
-    # ---------- Generate cancellation plot (saved to static) ----------
-    # Paths
-    plot_rel_path = "generated/cancellation_rate_by_month.png"  # relative to /static
-    plot_abs_path = os.path.join(app.root_path, "static", plot_rel_path)
+        # --- cancellation rate per month (from your Query 4) ---
+        cur.execute("""
+            SELECT
+              DATE_FORMAT(date_of_purchase, '%Y-%m') AS purchase_month,
+              ROUND(
+                100 * SUM(CASE
+                            WHEN order_status = 'Cancelled by customer'
+                            THEN 1 ELSE 0
+                          END) / COUNT(*), 2
+              ) AS customer_cancellation_rate
+            FROM Orders
+            GROUP BY DATE_FORMAT(date_of_purchase, '%Y-%m')
+            ORDER BY purchase_month;
+        """)
+        rows = cur.fetchall()
 
-    # Make sure folder exists
-    os.makedirs(os.path.dirname(plot_abs_path), exist_ok=True)
+    # rows -> lists for plotting
+    months = [r["purchase_month"] for r in rows]
+    rates  = [float(r["customer_cancellation_rate"]) for r in rows]
 
-    # Read data
-    df = pd.read_csv("cancellation_rate_per_month.csv")
-    df = df.sort_values("purchase_month")
+    # save plot into static/
+    static_dir = os.path.join(app.root_path, "static")
+    os.makedirs(static_dir, exist_ok=True)
+    plot_path = os.path.join(static_dir, "cancellation_rate_by_month.png")
 
-    # Plot
-    fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(df["purchase_month"], df["customer_cancellation_rate"], marker="o")
-    ax.set_title("Customer Cancellation Rate by Month")
-    ax.set_xlabel("Purchase Month")
-    ax.set_ylabel("Cancellation Rate (%)")
-    ax.grid(True)
-    fig.tight_layout()
-
-    # Save (overwrite each time)
-    fig.savefig(plot_abs_path, dpi=200, bbox_inches="tight")
-    plt.close(fig)
-
-    # Cache-buster so browser shows the newest image
-    plot_url = url_for("static", filename=plot_rel_path) + f"?v={int(datetime.now().timestamp())}"
+    plt.figure(figsize=(8, 5))
+    plt.plot(months, rates, marker="o")
+    plt.title("Customer Cancellation Rate by Month")
+    plt.xlabel("Purchase Month")
+    plt.ylabel("Cancellation Rate (%)")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(plot_path, dpi=200, bbox_inches="tight")
+    plt.close()
 
     return render_template(
         "admin_dashboard.html",
         planes_count=planes_count,
         routes_count=routes_count,
         flights_count=flights_count,
-        cancellation_plot_url=plot_url
+        cancel_plot="cancellation_rate_by_month.png"
     )
 
 @app.route("/admin/add/employees", methods=["GET", "POST"])
