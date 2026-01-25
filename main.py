@@ -7,7 +7,7 @@ import re
 import os
 import pandas as pd
 import matplotlib
-matplotlib.use("Agg")  # important on servers
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
@@ -22,7 +22,6 @@ def refresh_session():
         session.modified = True
 
 def normalize_time(t):
-    # MySQL TIME can come back as timedelta in mysql-connector
     if isinstance(t, timedelta):
         secs = int(t.total_seconds())
         h = secs // 3600
@@ -33,14 +32,15 @@ def normalize_time(t):
 
 PHONE_RE = re.compile(r"^[0-9-]+$")
 
+#remove spaces, keep digits + dashes only
 def normalize_phone(p: str) -> str:
-    # optional: remove spaces, keep digits + dashes only
     return (p or "").strip().replace(" ", "")
 
 def is_valid_phone(p: str) -> bool:
     p = normalize_phone(p)
     return bool(p) and PHONE_RE.fullmatch(p) is not None
 
+# Get current user details using the session email
 def current_user():
     email = session.get("user_email")
     if not email:
@@ -57,6 +57,7 @@ def current_user():
         )
         return cur.fetchone()
 
+# Update flight status to 'completed' after takeoff time
 def refresh_flight_statuses():
     with db_cursor() as cur:
         cur.execute("""
@@ -66,6 +67,7 @@ def refresh_flight_statuses():
               AND TIMESTAMP(takeoff_date, takeoff_time) < NOW()
         """)
 
+# Show a welcome message after login
 @app.route("/")
 def home():
     user = current_user()
@@ -78,10 +80,10 @@ def home():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    # Where to go after login (e.g. /seats/LY482?class_type=Economy)
+    # Get the page to redirect to after login (if the user was sent here from another route)
     next_url = request.args.get("next") or request.form.get("next")
 
-    # If already logged in, go to next (if provided) or home
+    # If the user is already logged in, redirect them immediately
     if session.get("user_email"):
         return redirect(next_url or url_for("home"))
 
@@ -108,49 +110,18 @@ def login():
             flash("Invalid email or password.", "error")
             return render_template("login.html", next=next_url)
 
+        # Save the user's login session and keep it active for a limited time
         session.permanent = True
 
         session["user_email"] = user["customer_email"]
         session["just_logged_in_name"] = user["customer_first_name"]
 
+        # Redirect to the original page safely, otherwise go to the homepage
         if next_url and is_safe_url(next_url):
             return redirect(next_url)
         return redirect(url_for("home"))
 
-    # GET request: show login page (also pass next so template can include it)
     return render_template("login.html", next=next_url)
-
-@app.route("/booking-log/<flight_id>", methods=["GET"])
-def booking_log(flight_id):
-    # Optional: make sure flight exists (recommended)
-    with db_cursor() as cur:
-        cur.execute("SELECT 1 FROM Flight WHERE flight_id = %s", (flight_id,))
-        if not cur.fetchone():
-            flash("Flight not found.", "error")
-            return redirect(url_for("book"))
-
-    return render_template("booking_log.html", flight_id=flight_id)
-
-@app.route("/logout")
-def logout():
-    session.pop("user_email", None)
-    session.pop("just_logged_in_name", None)
-
-    # ✅ if the user clicked "Admin" and we forced logout first
-    next_url = session.pop("next_after_logout", None)
-    if next_url:
-        return redirect(next_url)
-
-    flash("You were logged out", "success")
-    return redirect(url_for("home"))
-
-def is_safe_url(target: str) -> bool:
-    """Prevent open-redirects (only allow redirects inside your site)."""
-    if not target:
-        return False
-    ref_url = urlparse(request.host_url)
-    test_url = urlparse(urljoin(request.host_url, target))
-    return (test_url.scheme, test_url.netloc) == (ref_url.scheme, ref_url.netloc)
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -318,6 +289,16 @@ def book():
         flights=flights,
         airports=airports
     )
+
+@app.route("/booking-log/<flight_id>", methods=["GET"])
+def booking_log(flight_id):
+    with db_cursor() as cur:
+        cur.execute("SELECT 1 FROM Flight WHERE flight_id = %s", (flight_id,))
+        if not cur.fetchone():
+            flash("Flight not found.", "error")
+            return redirect(url_for("book"))
+
+    return render_template("booking_log.html", flight_id=flight_id)
 
 @app.route("/booking/<flight_id>/guest", methods=["GET", "POST"])
 def guest_details(flight_id):
@@ -572,107 +553,6 @@ def flight_details(flight_id):
         c["available"] = avail_map.get(c["class_type"], 0)
 
     return render_template("flight_details.html", flight=flight, cabins=cabins)
-
-@app.route("/purchase-history", methods=["GET"])
-def purchase_history():
-    # Only for logged-in users
-    if not session.get("user_email"):
-        flash("Please log in to view your purchase history.", "error")
-        return redirect(url_for("login", next=url_for("purchase_history")))
-
-    refresh_flight_statuses()
-
-    email = session["user_email"]
-
-    # Filter status from querystring: ?status=Active / Completed / Cancelled by customer / Cancelled by system
-    status = request.args.get("status", "").strip()
-
-    allowed_statuses = {
-        "Active",
-        "Completed",
-        "Cancelled by customer",
-        "Cancelled by system",
-    }
-
-    where = ["o.reg_customer_email = %s", "o.order_status IN ('Active','Completed','Cancelled by customer')"]
-
-    params = [email]
-
-    if status:
-        if status not in allowed_statuses:
-            flash("Invalid status filter.", "error")
-            return redirect(url_for("purchase_history"))
-        where.append("o.order_status = %s")
-        params.append(status)
-
-    where_sql = "WHERE " + " AND ".join(where)
-
-    with db_cursor() as cur:
-        # One query: orders + seats_count + total price (from Flight_Class_Pricing)
-        cur.execute(f"""
-            SELECT
-              o.order_id,
-              o.flight_id,
-              o.date_of_purchase,
-              o.order_status,
-              f.takeoff_date,
-              f.takeoff_time,
-              r.origin_airport,
-              r.destination_airport,
-              COUNT(s.order_id) AS seats_count,
-              COALESCE(SUM(fcp.price), 0) AS total
-            FROM Orders o
-            JOIN Flight f ON f.flight_id = o.flight_id
-            JOIN Flight_route r ON r.route_id = f.route_id
-            LEFT JOIN Seat s ON s.order_id = o.order_id
-            LEFT JOIN Flight_Class_Pricing fcp
-              ON fcp.flight_id  = o.flight_id
-             AND fcp.plane_id   = s.plane_id
-             AND fcp.class_type = s.class_type
-            {where_sql}
-            GROUP BY
-              o.order_id, o.flight_id, o.date_of_purchase, o.order_status,
-              f.takeoff_date, f.takeoff_time, r.origin_airport, r.destination_airport
-            ORDER BY o.date_of_purchase DESC
-            LIMIT 500
-        """, tuple(params))
-
-        orders = cur.fetchall()
-
-    return render_template(
-        "purchase_history.html",
-        orders=orders,
-        selected_status=status
-    )
-
-def generate_order_id(cur, max_tries=20):
-    for _ in range(max_tries):
-        cur.execute("SELECT LPAD(FLOOR(RAND()*99999), 5, '0') AS oid")
-        oid = cur.fetchone()["oid"]
-        cur.execute("SELECT 1 FROM Orders WHERE order_id = %s", (oid,))
-        if not cur.fetchone():
-            return oid
-    raise RuntimeError("Could not generate unique order id")
-
-def cleanup_expired_pending_orders():
-    with db_cursor() as cur:
-        # 1) find orders that should be removed (never paid)
-        cur.execute("""
-            SELECT order_id
-            FROM Orders
-            WHERE
-              (order_status = 'Pending' AND date_of_purchase < (NOW() - INTERVAL 15 MINUTE))
-              OR
-              (order_status = 'Cancelled by customer' AND date_of_purchase < (NOW() - INTERVAL 15 MINUTE))
-        """)
-        old_orders = [r["order_id"] for r in cur.fetchall()]
-
-        # 2) release seats + delete the orders
-        for oid in old_orders:
-            cur.execute("UPDATE Seat SET order_id = NULL WHERE order_id = %s", (oid,))
-            cur.execute("DELETE FROM Orders WHERE order_id = %s", (oid,))
-
-
 
 @app.route("/seats/<flight_id>", methods=["GET", "POST"])
 def seats(flight_id):
@@ -990,6 +870,126 @@ def cancel_order(order_id):
         flash(f"Order cancelled. Fee ₪{fee:.2f}. Refund ₪{refund:.2f}.", "success")
 
     return redirect(url_for("tickets"))
+
+@app.route("/purchase-history", methods=["GET"])
+def purchase_history():
+    # Only for logged-in users
+    if not session.get("user_email"):
+        flash("Please log in to view your purchase history.", "error")
+        return redirect(url_for("login", next=url_for("purchase_history")))
+
+    refresh_flight_statuses()
+
+    email = session["user_email"]
+
+    # Filter status from querystring: ?status=Active / Completed / Cancelled by customer / Cancelled by system
+    status = request.args.get("status", "").strip()
+
+    allowed_statuses = {
+        "Active",
+        "Completed",
+        "Cancelled by customer",
+        "Cancelled by system",
+    }
+
+    where = ["o.reg_customer_email = %s", "o.order_status IN ('Active','Completed','Cancelled by customer')"]
+
+    params = [email]
+
+    if status:
+        if status not in allowed_statuses:
+            flash("Invalid status filter.", "error")
+            return redirect(url_for("purchase_history"))
+        where.append("o.order_status = %s")
+        params.append(status)
+
+    where_sql = "WHERE " + " AND ".join(where)
+
+    with db_cursor() as cur:
+        # One query: orders + seats_count + total price (from Flight_Class_Pricing)
+        cur.execute(f"""
+            SELECT
+              o.order_id,
+              o.flight_id,
+              o.date_of_purchase,
+              o.order_status,
+              f.takeoff_date,
+              f.takeoff_time,
+              r.origin_airport,
+              r.destination_airport,
+              COUNT(s.order_id) AS seats_count,
+              COALESCE(SUM(fcp.price), 0) AS total
+            FROM Orders o
+            JOIN Flight f ON f.flight_id = o.flight_id
+            JOIN Flight_route r ON r.route_id = f.route_id
+            LEFT JOIN Seat s ON s.order_id = o.order_id
+            LEFT JOIN Flight_Class_Pricing fcp
+              ON fcp.flight_id  = o.flight_id
+             AND fcp.plane_id   = s.plane_id
+             AND fcp.class_type = s.class_type
+            {where_sql}
+            GROUP BY
+              o.order_id, o.flight_id, o.date_of_purchase, o.order_status,
+              f.takeoff_date, f.takeoff_time, r.origin_airport, r.destination_airport
+            ORDER BY o.date_of_purchase DESC
+            LIMIT 500
+        """, tuple(params))
+
+        orders = cur.fetchall()
+
+    return render_template(
+        "purchase_history.html",
+        orders=orders,
+        selected_status=status
+    )
+
+@app.route("/logout")
+def logout():
+    session.pop("user_email", None)
+    session.pop("just_logged_in_name", None)
+
+    # ✅ if the user clicked "Admin" and we forced logout first
+    next_url = session.pop("next_after_logout", None)
+    if next_url:
+        return redirect(next_url)
+
+    flash("You were logged out", "success")
+    return redirect(url_for("home"))
+
+def is_safe_url(target: str) -> bool:
+    """Prevent open-redirects (only allow redirects inside your site)."""
+    if not target:
+        return False
+    ref_url = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return (test_url.scheme, test_url.netloc) == (ref_url.scheme, ref_url.netloc)
+
+def generate_order_id(cur, max_tries=20):
+    for _ in range(max_tries):
+        cur.execute("SELECT LPAD(FLOOR(RAND()*99999), 5, '0') AS oid")
+        oid = cur.fetchone()["oid"]
+        cur.execute("SELECT 1 FROM Orders WHERE order_id = %s", (oid,))
+        if not cur.fetchone():
+            return oid
+    raise RuntimeError("Could not generate unique order id")
+
+def cleanup_expired_pending_orders():
+    with db_cursor() as cur:
+        # 1) find orders that should be removed (never paid)
+        cur.execute("""
+            SELECT order_id
+            FROM Orders
+            WHERE
+              (order_status = 'Pending' AND date_of_purchase < (NOW() - INTERVAL 15 MINUTE))
+              OR
+              (order_status = 'Cancelled by customer' AND date_of_purchase < (NOW() - INTERVAL 15 MINUTE))
+        """)
+        old_orders = [r["order_id"] for r in cur.fetchall()]
+
+        # 2) release seats + delete the orders
+        for oid in old_orders:
+            cur.execute("UPDATE Seat SET order_id = NULL WHERE order_id = %s", (oid,))
+            cur.execute("DELETE FROM Orders WHERE order_id = %s", (oid,))
 
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
