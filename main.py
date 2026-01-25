@@ -1671,7 +1671,8 @@ def admin_dashboard():
     # Graphs
     static_dir = os.path.join(app.root_path, "static")
     os.makedirs(static_dir, exist_ok=True)
-    plot_path = os.path.join(static_dir, "cancellation_rate_by_month.png")
+    cancel_plot_filename = f"cancellation_rate_by_month_{int(datetime.now().timestamp())}.png"
+    plot_path = os.path.join(static_dir, cancel_plot_filename)
 
     plt.figure(figsize=(8, 5))
     plt.plot(months, rates, marker="o")
@@ -1799,7 +1800,7 @@ def admin_dashboard():
         planes_count=planes_count,
         routes_count=routes_count,
         flights_count=flights_count,
-        cancel_plot="cancellation_rate_by_month.png",
+        cancel_plot=cancel_plot_filename,
         employee_hours_plot = emp_plot_filename,
         flights_by_hour_plot=hour_plot_filename,
         flights_completed_plot=completed_plot_filename,
