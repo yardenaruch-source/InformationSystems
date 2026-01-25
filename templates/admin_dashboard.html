@@ -2,85 +2,157 @@
 {% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-<section class="dash-wrap">
+<section class="board">
+  <h1 style="text-align:center;">Admin Dashboard</h1>
 
-  <h1 class="dash-title">Admin Dashboard</h1>
-
-  <div class="admin-stats">
-    <div class="admin-stat">
-      <div>Planes</div>
-      <span class="admin-stat-num">{{ planes_count }}</span>
+  <!-- Top KPIs -->
+  <div class="dash-kpis">
+    <div class="dash-kpi">
+      <div class="dash-kpi-label">Planes</div>
+      <div class="dash-kpi-value">{{ planes_count }}</div>
     </div>
 
-    <div class="admin-stat">
-      <div>Routes</div>
-      <span class="admin-stat-num">{{ routes_count }}</span>
+    <div class="dash-kpi">
+      <div class="dash-kpi-label">Routes</div>
+      <div class="dash-kpi-value">{{ routes_count }}</div>
     </div>
 
-    <div class="admin-stat">
-      <div>Flights</div>
-      <span class="admin-stat-num">{{ flights_count }}</span>
+    <div class="dash-kpi">
+      <div class="dash-kpi-label">Flights</div>
+      <div class="dash-kpi-value">{{ flights_count }}</div>
     </div>
   </div>
 
-  <!-- ROW 1: two charts -->
-  <section class="dash-grid dash-grid-2">
+  <!-- Graphs grid -->
+  <div class="dash-grid">
+
+    <!-- 1) Cancellation -->
     <div class="dash-card">
-      <img
-        class="dash-img"
-        src="{{ url_for('static', filename=flights_by_hour_plot) }}"
-        alt="Number of Flights by Takeoff Hour"
-      >
+      <div class="dash-card-head">
+        <h3>Customer Cancellation Rate by Month</h3>
+        <p class="dash-card-sub">Orders cancelled by customer (%), grouped by purchase month</p>
+      </div>
+
+      <button class="dash-zoom" type="button"
+              data-fullsrc="{{ url_for('static', filename=cancel_plot) }}"
+              aria-label="Open fullscreen chart">
+        <img class="dash-img"
+             src="{{ url_for('static', filename=cancel_plot) }}"
+             alt="Customer Cancellation Rate by Month chart">
+      </button>
     </div>
 
+    <!-- 2) Employee hours -->
     <div class="dash-card">
-      <img
-        class="dash-img"
-        src="{{ url_for('static', filename=employee_hours_plot) }}"
-        alt="Flight Hours per Employee"
-      >
-    </div>
-  </section>
-
-  <!-- ROW 2: left column (2 charts stacked) + right column (quote + cancellation chart) -->
-  <section class="dash-grid dash-grid-2 dash-grid-2b">
-    <div class="dash-stack">
-      <div class="dash-card">
-        <img
-          class="dash-img"
-          src="{{ url_for('static', filename=flights_completed_plot) }}"
-          alt="Flights Completed per Month"
-        >
+      <div class="dash-card-head">
+        <h3>Flight Hours per Employee</h3>
+        <p class="dash-card-sub">Short vs long flight hours (completed flights)</p>
       </div>
 
-      <div class="dash-card">
-        <img
-          class="dash-img"
-          src="{{ url_for('static', filename=top5_routes_plot) }}"
-          alt="Top 5 Routes by Completed Flights"
-        >
-      </div>
+      <button class="dash-zoom" type="button"
+              data-fullsrc="{{ url_for('static', filename=employee_hours_plot) }}"
+              aria-label="Open fullscreen chart">
+        <img class="dash-img"
+             src="{{ url_for('static', filename=employee_hours_plot) }}"
+             alt="Flight Hours per Employee chart">
+      </button>
     </div>
 
-    <div class="dash-stack">
-      <div class="quote-card">
-        <div class="quote-mark quote-mark-top">“</div>
-        <div class="quote-text">
-          A SUCCESSFUL FLIGHT BEGINS<br>
-          LONG BEFORE TAKEOFF.
-        </div>
-        <div class="quote-mark quote-mark-bottom">”</div>
+    <!-- 3) Flights by takeoff hour -->
+    <div class="dash-card">
+      <div class="dash-card-head">
+        <h3>Number of Flights by Takeoff Hour</h3>
+        <p class="dash-card-sub">Completed/Full flights by hour of day</p>
       </div>
 
-      <div class="dash-card">
-        <img
-          class="dash-img"
-          src="{{ url_for('static', filename=cancel_plot) }}"
-          alt="Customer Cancellation Rate by Month"
-        >
-      </div>
+      <button class="dash-zoom" type="button"
+              data-fullsrc="{{ url_for('static', filename=flights_by_hour_plot) }}"
+              aria-label="Open fullscreen chart">
+        <img class="dash-img"
+             src="{{ url_for('static', filename=flights_by_hour_plot) }}"
+             alt="Number of Flights by Takeoff Hour chart">
+      </button>
     </div>
-  </section>
 
+    <!-- 4) Flights completed per month -->
+    <div class="dash-card">
+      <div class="dash-card-head">
+        <h3>Flights Completed per Month</h3>
+        <p class="dash-card-sub">Total completed flights grouped by takeoff month</p>
+      </div>
+
+      <button class="dash-zoom" type="button"
+              data-fullsrc="{{ url_for('static', filename=flights_completed_plot) }}"
+              aria-label="Open fullscreen chart">
+        <img class="dash-img"
+             src="{{ url_for('static', filename=flights_completed_plot) }}"
+             alt="Flights Completed per Month chart">
+      </button>
+    </div>
+
+    <!-- 5) Top 5 routes -->
+    <div class="dash-card">
+      <div class="dash-card-head">
+        <h3>Top 5 Routes by Completed Flights</h3>
+        <p class="dash-card-sub">Most completed routes</p>
+      </div>
+
+      <button class="dash-zoom" type="button"
+              data-fullsrc="{{ url_for('static', filename=top5_routes_plot) }}"
+              aria-label="Open fullscreen chart">
+        <img class="dash-img"
+             src="{{ url_for('static', filename=top5_routes_plot) }}"
+             alt="Top 5 Routes by Completed Flights chart">
+      </button>
+    </div>
+
+  </div>
 </section>
+
+<!-- Fullscreen modal (one per page) -->
+<div class="img-modal" id="imgModal" aria-hidden="true">
+  <div class="img-modal-backdrop" data-close="1"></div>
+
+  <div class="img-modal-content" role="dialog" aria-modal="true" aria-label="Chart preview">
+    <button class="img-modal-close" type="button" data-close="1" aria-label="Close">✕</button>
+    <img class="img-modal-img" id="imgModalImg" src="" alt="Fullscreen chart">
+  </div>
+</div>
+
+<!-- JS: open/close modal (required for responsive + close behavior) -->
+<script>
+(function () {
+  const modal = document.getElementById("imgModal");
+  const modalImg = document.getElementById("imgModalImg");
+
+  function openModal(src) {
+    modalImg.src = src;
+    modal.classList.add("is-open");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeModal() {
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+    modalImg.src = "";
+    document.body.style.overflow = "";
+  }
+
+  document.querySelectorAll(".dash-zoom").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const src = btn.getAttribute("data-fullsrc");
+      if (src) openModal(src);
+    });
+  });
+
+  modal.addEventListener("click", (e) => {
+    if (e.target && e.target.getAttribute("data-close") === "1") closeModal();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && modal.classList.contains("is-open")) closeModal();
+  });
+})();
+</script>
 {% endblock %}
