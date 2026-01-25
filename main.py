@@ -1672,7 +1672,7 @@ def admin_dashboard():
     static_dir = os.path.join(app.root_path, "static")
     os.makedirs(static_dir, exist_ok=True)
     cancel_plot_filename = f"cancellation_rate_by_month_{int(datetime.now().timestamp())}.png"
-    plot_path = os.path.join(static_dir, cancel_plot_filename)
+    cancel_plot_path = os.path.join(static_dir, cancel_plot_filename)
 
     plt.figure(figsize=(8, 5))
     plt.plot(months, rates, marker="o")
