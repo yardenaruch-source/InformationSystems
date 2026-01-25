@@ -693,7 +693,7 @@ def checkout(order_id):
     with db_cursor() as cur:
         cur.execute("""
             SELECT o.order_id, o.flight_id, o.date_of_purchase, o.order_status,
-                   f.takeoff_date, f.takeoff_time,
+                   f.flight_id, f.takeoff_date, f.takeoff_time,
                    r.origin_airport, r.destination_airport,
                    DATE(DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)) AS landing_date,
                    TIME(DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)) AS landing_time
@@ -747,7 +747,7 @@ def tickets():
             cur.execute("""
                 SELECT
                     o.order_id, o.flight_id, o.order_status,
-                    f.takeoff_date, f.takeoff_time,
+                    f.flight_id, f.takeoff_date, f.takeoff_time,
                     DATE(DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)) AS landing_date,
                     TIME(DATE_ADD(TIMESTAMP(f.takeoff_date, f.takeoff_time), INTERVAL r.flight_duration MINUTE)) AS landing_time,
                     r.origin_airport, r.destination_airport,
