@@ -1,9 +1,20 @@
 {% extends "base.html" %}
 {% block title %}Find My Tickets{% endblock %}
+{% block flashes %}{% endblock %}
 
 {% block content %}
 <section class="board narrow-board">
   <h1>Find My Ticket</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-wrap">
+        {% for category, msg in messages %}
+          <div class="flash flash-{{ category }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
 
   {% if not order %}
     <form method="post" class="form" style="margin-top:12px;">
