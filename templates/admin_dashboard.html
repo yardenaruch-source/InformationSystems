@@ -4,19 +4,19 @@
 {% block content %}
 <div class="dash-wrap">
 
-  <h1 class="dash-title">Dashboard</h1>
+  <h1 style="text-align:center; margin-bottom: 45px;">Admin Dashboard</h1>
 
   <div class="admin-stats">
     <div class="admin-stat">
-      Planes
+      <b>Planes</b>
       <span class="admin-stat-num">{{ planes_count }}</span>
     </div>
     <div class="admin-stat">
-      Routes
+      <b>Routes</b>
       <span class="admin-stat-num">{{ routes_count }}</span>
     </div>
     <div class="admin-stat">
-      Flights
+      <b>Flights</b>
       <span class="admin-stat-num">{{ flights_count }}</span>
     </div>
   </div>
@@ -25,7 +25,7 @@
        SECTION A (top)
        Left = big, Right = 2 stacked
        ========================= -->
-  <div class="dash-section dash-grid-2col">
+  <div class="dash-section dash-grid-2col dash-grid-bottom">
 
     <!-- LEFT BIG -->
     <div class="dash-card dash-card-big">
@@ -38,7 +38,6 @@
     </div>
 
     <!-- RIGHT STACK -->
-    <div class="dash-stack">
       <div class="dash-card">
         <h3 class="dash-card-title">Number of Flights by Takeoff Hour</h3>
         <img
@@ -64,7 +63,7 @@
        SECTION B (bottom)
        Left = big/tall, Right = normal
        ========================= -->
-  <div class="dash-section dash-grid-2col dash-grid-bottom">
+  <div class="dash-section dash-grid-2col">
 
     <!-- LEFT BIG/TALL -->
     <div class="dash-card dash-card-tall">
