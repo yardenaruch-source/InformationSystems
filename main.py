@@ -4,6 +4,12 @@ import mysql.connector
 from datetime import datetime, date, timedelta, time
 from urllib.parse import urlparse, urljoin
 import re
+import os
+from datetime import datetime
+import pandas as pd
+import matplotlib
+matplotlib.use("Agg")  # important on servers
+import matplotlib.pyplot as plt
 
 app = Flask(__name__)
 app.secret_key = 'the_winning_triplet'
@@ -1631,11 +1637,40 @@ def admin_dashboard():
         cur.execute("SELECT COUNT(*) AS n FROM Flight")
         flights_count = cur.fetchone()["n"]
 
+    # ---------- Generate cancellation plot (saved to static) ----------
+    # Paths
+    plot_rel_path = "generated/cancellation_rate_by_month.png"  # relative to /static
+    plot_abs_path = os.path.join(app.root_path, "static", plot_rel_path)
+
+    # Make sure folder exists
+    os.makedirs(os.path.dirname(plot_abs_path), exist_ok=True)
+
+    # Read data
+    df = pd.read_csv("cancellation_rate_per_month.csv")
+    df = df.sort_values("purchase_month")
+
+    # Plot
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(df["purchase_month"], df["customer_cancellation_rate"], marker="o")
+    ax.set_title("Customer Cancellation Rate by Month")
+    ax.set_xlabel("Purchase Month")
+    ax.set_ylabel("Cancellation Rate (%)")
+    ax.grid(True)
+    fig.tight_layout()
+
+    # Save (overwrite each time)
+    fig.savefig(plot_abs_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+
+    # Cache-buster so browser shows the newest image
+    plot_url = url_for("static", filename=plot_rel_path) + f"?v={int(datetime.now().timestamp())}"
+
     return render_template(
         "admin_dashboard.html",
         planes_count=planes_count,
         routes_count=routes_count,
-        flights_count=flights_count
+        flights_count=flights_count,
+        cancellation_plot_url=plot_url
     )
 
 @app.route("/admin/add/employees", methods=["GET", "POST"])
