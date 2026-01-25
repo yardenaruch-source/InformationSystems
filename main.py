@@ -125,7 +125,7 @@ def login():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    # next can arrive via querystring (GET) or hidden input (POST)
+    # Get the page to redirect to after login (if the user was sent here from another route)
     next_url = request.args.get("next") or request.form.get("next")
 
     if session.get("user_email"):
@@ -141,7 +141,7 @@ def register():
         passport_id = request.form.get("passport_id", "").strip()
         birth_date = request.form.get("birth_date", "").strip()
         phones = [normalize_phone(p) for p in request.form.getlist("phone")]
-        phones = [p for p in phones if p]  # keep non-empty
+        phones = [p for p in phones if p]
 
         form = {
             "first_name": first_name,
@@ -171,11 +171,12 @@ def register():
             return render_template("register.html", today=today, next=next_url, form=form)
 
         if any(not is_valid_phone(p) for p in phones):
-            flash("Phone numbers can contain only digits and '-'.", "error")
+            flash("Phone numbers can contain only digits and '-'", "error")
             return render_template("register.html", today=today, next=next_url, form=form)
 
         try:
             with db_cursor() as cur:
+                # Checks if the customer is already registered
                 cur.execute("""
                     SELECT 1
                     FROM Registered_customer
@@ -185,6 +186,7 @@ def register():
                     flash("That email is already registered", "error")
                     return render_template("register.html", today=today, next=next_url, form=form)
 
+                # Checks if the passport ID is already in the DB
                 cur.execute("""
                     SELECT 1
                     FROM Registered_customer
@@ -200,7 +202,6 @@ def register():
                     VALUES (%s, %s, %s, %s, %s, %s, CURDATE())
                 """, (email, first_name, last_name, password, passport_id, birth_date))
 
-                # Replace phones (delete then insert)
                 cur.execute("DELETE FROM Registered_customer_phone WHERE customer_email = %s", (email,))
                 for ph in phones:
                     cur.execute("""
@@ -208,9 +209,8 @@ def register():
                         VALUES (%s, %s)
                     """, (email, ph))
 
-            flash("Registration successful! Please log in.", "success")
+            flash("Registration successful! Please log in", "success")
 
-            # ✅ send them to login, and preserve next for after login
             if next_url and is_safe_url(next_url):
                 return redirect(url_for("login", next=next_url))
             return redirect(url_for("login"))
@@ -219,7 +219,6 @@ def register():
             flash("Registration failed. Please try again.", "error")
             return render_template("register.html", today=today, next=next_url, form=form)
 
-    # GET
     return render_template("register.html", today=today, next=next_url, form=None)
 
 @app.route("/book", methods=["GET"])
@@ -231,7 +230,6 @@ def book():
     date = request.args.get("date", "").strip()
 
     with db_cursor() as cur:
-        # dropdown list
         cur.execute("""
             SELECT DISTINCT origin_airport AS airport FROM Flight_route
             UNION
@@ -240,7 +238,7 @@ def book():
         """)
         airports = [r["airport"] for r in cur.fetchall()]
 
-        # base query: show ALL scheduled flights
+        # Show all scheduled flights
         sql = """
             SELECT
               f.flight_id,
@@ -262,7 +260,7 @@ def book():
 
         params = []
 
-        # apply filters only if user chose them
+        # Filters
         if date:
             sql += " AND f.takeoff_date = %s"
             params.append(date)
@@ -293,9 +291,12 @@ def book():
 @app.route("/booking-log/<flight_id>", methods=["GET"])
 def booking_log(flight_id):
     with db_cursor() as cur:
-        cur.execute("SELECT 1 FROM Flight WHERE flight_id = %s", (flight_id,))
+        cur.execute("""SELECT 1
+                    FROM Flight
+                    WHERE flight_id = %s
+                    """, (flight_id,))
         if not cur.fetchone():
-            flash("Flight not found.", "error")
+            flash("Flight not found", "error")
             return redirect(url_for("book"))
 
     return render_template("booking_log.html", flight_id=flight_id)
@@ -304,10 +305,9 @@ def booking_log(flight_id):
 def guest_details(flight_id):
     flight_id = flight_id.strip().upper()
 
-    # after guest details, continue to the flight page (then seats)
     next_url = request.args.get("next") or request.form.get("next") or url_for("flight_details", flight_id=flight_id)
 
-    # used to re-fill the form if there is an error
+    # Used to refill the form if there is an error
     form = {"email": "", "full_name": "", "passport_id": "", "phones": []}
 
     if request.method == "POST":
@@ -319,7 +319,6 @@ def guest_details(flight_id):
 
         form = {"email": email, "full_name": full_name, "passport_id": passport_id, "phones": phones}
 
-        # validation
         if not email or not full_name or not passport_id or len(phones) == 0:
             flash("Please fill in all fields (including at least one phone).", "error")
             return render_template(
@@ -331,7 +330,7 @@ def guest_details(flight_id):
             )
 
         if any(not is_valid_phone(p) for p in phones):
-            flash("Phone numbers can contain only digits and '-'.", "error")
+            flash("Phone numbers can contain only digits and '-'", "error")
             return render_template(
                 "guest_details.html",
                 flight_id=flight_id,
@@ -340,21 +339,18 @@ def guest_details(flight_id):
                 registered_customer=False
             )
 
-        # If email belongs to registered customer -> show message then redirect to login
+        # If the email belongs to a registered customer - show message then redirect to login page
         with db_cursor() as cur:
             cur.execute("SELECT 1 FROM Registered_customer WHERE customer_email = %s", (email,))
             exists = cur.fetchone() is not None
-
         if exists:
             flash("This email belongs to a registered customer.\n Please log in.", "error")
             return redirect(url_for("login", next=url_for("flight_details", flight_id=flight_id)))
 
-        # split full name to first/last for Guest table
         parts = full_name.split()
         first_name = parts[0]
         last_name = " ".join(parts[1:]) if len(parts) > 1 else ""
 
-        # keep guest info in session so seats() can use it
         session["guest"] = {
             "email": email,
             "first_name": first_name,
@@ -364,7 +360,6 @@ def guest_details(flight_id):
 
         return redirect(next_url)
 
-    # GET
     return render_template(
         "guest_details.html",
         flight_id=flight_id,
@@ -375,19 +370,16 @@ def guest_details(flight_id):
 
 @app.route("/booking/<flight_id>/customer-details", methods=["GET", "POST"])
 def customer_details(flight_id):
-    # must be logged in
     if not session.get("user_email"):
-        # if not logged in, send them to guest flow or login
         return redirect(url_for("guest_details", flight_id=flight_id, next=url_for("flight_details", flight_id=flight_id)))
 
     flight_id = flight_id.strip().upper()
 
-    # after details, continue to flight details
     next_url = request.args.get("next") or request.form.get("next") or url_for("flight_details", flight_id=flight_id)
 
     email = session.get("user_email")
 
-    # GET: prefill form from DB
+    # Automatically fill in the customer's details
     with db_cursor() as cur:
         cur.execute("""
             SELECT customer_email, customer_first_name, customer_last_name, passport_id, birth_date
@@ -425,7 +417,6 @@ def customer_details(flight_id):
         phones_new = [normalize_phone(p) for p in request.form.getlist("phone")]
         phones_new = [p for p in phones_new if p]
 
-        # re-fill if error
         form.update({
             "first_name": first_name,
             "last_name": last_name,
@@ -434,13 +425,12 @@ def customer_details(flight_id):
             "phones": phones_new
         })
 
-        # basic validation
         if not all([first_name, last_name, passport_id, birth_date]) or len(phones_new) == 0:
             flash("Please fill in all fields (including at least one phone).", "error")
             return render_template("customer_details.html", flight_id=flight_id, next_url=next_url, form=form)
 
         if any(not is_valid_phone(p) for p in phones_new):
-            flash("Phone numbers can contain only digits and '-'.", "error")
+            flash("Phone numbers can contain only digits and '-'", "error")
             return render_template("customer_details.html", flight_id=flight_id, next_url=next_url, form=form)
 
         try:
@@ -448,7 +438,7 @@ def customer_details(flight_id):
             if bd < date(1900, 1, 1) or bd > date.today():
                 raise ValueError()
         except ValueError:
-            flash("Birth date must be valid (YYYY-MM-DD) and between 1900 and today.", "error")
+            flash("Birth date must be valid (YYYY-MM-DD) and between 1900 and today", "error")
             return render_template("customer_details.html", flight_id=flight_id, next_url=next_url, form=form)
 
         session["booking_customer"] = {
@@ -464,8 +454,8 @@ def customer_details(flight_id):
 
     return render_template("customer_details.html", flight_id=flight_id, next_url=next_url, form=form)
 
+# Creates all the seats for a specific flight
 def create_seats_for_flight(cur, flight_id: str, plane_id: str):
-    # get both cabin layouts
     cur.execute("""
         SELECT class_type, rows_num, columns_num
         FROM Cabin_class
@@ -485,10 +475,8 @@ def create_seats_for_flight(cur, flight_id: str, plane_id: str):
     if has_business:
         bus_rows, bus_cols = layout["Business"]
 
-    # make sure no leftovers (important if you retry same flight_id)
     cur.execute("DELETE FROM Seat WHERE flight_id = %s", (flight_id,))
 
-    # Business seats: rows 1..bus_rows
     if has_business:
         for r in range(1, bus_rows + 1):
             for c in range(1, bus_cols + 1):
@@ -497,7 +485,6 @@ def create_seats_for_flight(cur, flight_id: str, plane_id: str):
                     VALUES (%s, %s, %s, %s, 'Business', NULL)
                 """, (flight_id, r, c, plane_id))
 
-    # Economy seats: start AFTER Business rows
     econ_row_start = bus_rows + 1 if has_business else 1
     for r in range(econ_row_start, econ_row_start + econ_rows):
         for c in range(1, econ_cols + 1):
@@ -509,7 +496,6 @@ def create_seats_for_flight(cur, flight_id: str, plane_id: str):
 @app.route("/flight/<flight_id>")
 def flight_details(flight_id):
     with db_cursor() as cur:
-        # flight + route info
         cur.execute("""
             SELECT f.flight_id, f.takeoff_date, f.takeoff_time,
                    r.origin_airport, r.destination_airport, f.plane_id
@@ -519,10 +505,9 @@ def flight_details(flight_id):
         """, (flight_id,))
         flight = cur.fetchone()
         if not flight:
-            flash("Flight not found.", "error")
+            flash("Flight not found", "error")
             return redirect(url_for("book"))
 
-        # cabin classes (price + dimensions)
         cur.execute("""
             SELECT
               cc.class_type,
@@ -539,7 +524,7 @@ def flight_details(flight_id):
         """, (flight_id, flight["plane_id"]))
         cabins = cur.fetchall()
 
-        # availability per class (count seats where order_id is NULL)
+        # Seat availability per cabin class (count seats where order_id is NULL)
         cur.execute("""
             SELECT class_type, COUNT(*) AS available
             FROM Seat
@@ -548,7 +533,7 @@ def flight_details(flight_id):
         """, (flight_id,))
         avail_map = {row["class_type"]: row["available"] for row in cur.fetchall()}
 
-    # attach availability into cabins
+    # Attach availability into cabins
     for c in cabins:
         c["available"] = avail_map.get(c["class_type"], 0)
 
@@ -561,7 +546,7 @@ def seats(flight_id):
     cleanup_expired_pending_orders()
 
     if class_type not in ("Economy", "Business"):
-        flash("Invalid class type.", "error")
+        flash("Invalid class type", "error")
         return redirect(url_for("flight_details", flight_id=flight_id))
 
     with db_cursor() as cur:
@@ -583,16 +568,14 @@ def seats(flight_id):
             return redirect(url_for("flight_details", flight_id=flight_id))
 
         if request.method == "POST":
-            selected = request.form.getlist("seat")  # values like "3-2"
+            selected = request.form.getlist("seat")
             if not selected:
                 flash("Please select at least one seat.", "error")
             else:
-                # create order
                 oid = generate_order_id(cur)
                 user_email = session.get("user_email")
 
                 if user_email:
-                    # Registered user order
                     cur.execute("""
                         INSERT INTO Orders (order_id, flight_id, guest_email, reg_customer_email, date_of_purchase, order_status)
                         VALUES (%s, %s, %s, %s, NOW(), 'Pending')
@@ -610,7 +593,7 @@ def seats(flight_id):
                         VALUES (%s, %s, %s, %s, NOW(), 'Pending')
                     """, (oid, flight_id, guest_email, None))
 
-                # try to reserve seats (only if still free)
+                # Try to reserve seats (only if still free)
                 ok = True
                 for s in selected:
                     r_str, c_str = s.split("-")
@@ -628,14 +611,13 @@ def seats(flight_id):
                         break
 
                 if not ok:
-                    # rollback logic is limited with autocommit=True; simplest: cancel the order + release any reserved seats
                     cur.execute("UPDATE Seat SET order_id = NULL WHERE order_id = %s", (oid,))
                     cur.execute("UPDATE Orders SET order_status = 'Cancelled by system' WHERE order_id = %s", (oid,))
                     flash("One of the seats was just taken. Please try again.", "error")
                 else:
                     return redirect(url_for("checkout", order_id=oid))
 
-        # Build seat map for GET (and for re-render after POST errors)
+        # Build seat map
         cur.execute("""
             SELECT s_row, s_column, order_id
             FROM Seat
@@ -643,7 +625,7 @@ def seats(flight_id):
         """, (flight_id, class_type))
         seats_rows = cur.fetchall()
 
-    # Create a fast lookup: (row,col) -> is_taken
+    # Create a fast lookup: (row,col) is_taken
     taken = {(s["s_row"], s["s_column"]): (s["order_id"] is not None) for s in seats_rows}
 
     return render_template(
@@ -671,7 +653,7 @@ def checkout(order_id):
                 flash("This reservation expired or was already confirmed. Please book again.", "error")
                 return redirect(url_for("book"))
 
-            # ✅ If this order is for a guest, save guest details NOW (after payment)
+            # If this order is for a guest, save guest details now
             cur.execute("SELECT flight_id, guest_email FROM Orders WHERE order_id = %s", (order_id,))
             row = cur.fetchone()
             guest_email = (row or {}).get("guest_email")
@@ -679,8 +661,6 @@ def checkout(order_id):
             if guest_email:
                 guest = session.get("guest")
 
-                # If session is missing guest info, you can decide what to do:
-                # either block the purchase, or save only guest_email.
                 if not guest or guest.get("email") != guest_email:
                     flash("Guest details missing. Please continue as guest again.", "error")
                     return redirect(url_for("booking_log", flight_id=row.get("flight_id")))
@@ -689,7 +669,6 @@ def checkout(order_id):
                 last_name = guest.get("last_name", "")
                 phones = guest.get("phones", [])
 
-                # IMPORTANT: change table/column names to match your DB schema
                 cur.execute("""
                     INSERT INTO Guest (customer_email, customer_first_name, customer_last_name)
                     VALUES (%s, %s, %s)
@@ -705,12 +684,12 @@ def checkout(order_id):
                         VALUES (%s, %s)
                     """, (guest_email, ph))
 
-                # optional: cleanup so it won't leak to next order
                 session.pop("guest", None)
 
         flash("Payment confirmed. Order is now active!", "success")
         return redirect(url_for("checkout", order_id=order_id))
 
+    # Order details summary
     with db_cursor() as cur:
         cur.execute("""
             SELECT o.order_id, o.flight_id, o.date_of_purchase, o.order_status,
@@ -753,7 +732,6 @@ def checkout(order_id):
 @app.route("/tickets", methods=["GET", "POST"])
 def tickets():
     cleanup_expired_pending_orders()
-
     refresh_flight_statuses()
 
     order = None
@@ -805,7 +783,7 @@ def tickets():
             """, (order_id,))
             total = (cur.fetchone() or {}).get("total") or 0
 
-        # cancel eligibility: > 36 hours before takeoff and status Active
+        # Can cancel? up to 36 hours before takeoff and status Active
         takeoff_t = normalize_time(order["takeoff_time"])
         takeoff_dt = datetime.combine(order["takeoff_date"], takeoff_t)
         can_cancel = (order["order_status"] == "Active") and (takeoff_dt - datetime.now() > timedelta(hours=36))
@@ -816,7 +794,6 @@ def tickets():
 def cancel_order(order_id):
     refresh_flight_statuses()
     with db_cursor() as cur:
-        # fetch order + flight time
         cur.execute("""
             SELECT o.order_id, o.flight_id, o.order_status,
                    f.takeoff_date, f.takeoff_time
@@ -834,14 +811,13 @@ def cancel_order(order_id):
             flash("Only active orders can be cancelled.", "error")
             return redirect(url_for("tickets"))
 
-        # ✅ 36h rule
         takeoff_t = normalize_time(order["takeoff_time"])
         takeoff_dt = datetime.combine(order["takeoff_date"], takeoff_t)
         if takeoff_dt - datetime.now() <= timedelta(hours=36):
             flash("Too late to cancel (must be more than 36 hours before takeoff).", "error")
             return redirect(url_for("tickets"))
 
-        # ✅ STEP 1: calculate total BEFORE releasing seats
+        # Calculate price
         cur.execute("""
             SELECT COALESCE(SUM(fcp.price), 0) AS total
             FROM Seat s
@@ -856,7 +832,7 @@ def cancel_order(order_id):
         fee = round(float(total) * 0.05, 2)
         refund = round(float(total) * 0.95, 2)
 
-        # ✅ STEP 2: apply cancellation (update status + release seats)
+        # Apply cancellation
         cur.execute(
             "UPDATE Orders SET order_status = 'Cancelled by customer' WHERE order_id = %s",
             (order_id,)
@@ -866,14 +842,13 @@ def cancel_order(order_id):
             (order_id,)
         )
 
-        # ✅ STEP 3: show refund message
+        # Show refund message
         flash(f"Order cancelled. Fee ₪{fee:.2f}. Refund ₪{refund:.2f}.", "success")
 
     return redirect(url_for("tickets"))
 
 @app.route("/purchase-history", methods=["GET"])
 def purchase_history():
-    # Only for logged-in users
     if not session.get("user_email"):
         flash("Please log in to view your purchase history.", "error")
         return redirect(url_for("login", next=url_for("purchase_history")))
@@ -882,7 +857,6 @@ def purchase_history():
 
     email = session["user_email"]
 
-    # Filter status from querystring: ?status=Active / Completed / Cancelled by customer / Cancelled by system
     status = request.args.get("status", "").strip()
 
     allowed_statuses = {
@@ -892,7 +866,7 @@ def purchase_history():
         "Cancelled by system",
     }
 
-    where = ["o.reg_customer_email = %s", "o.order_status IN ('Active','Completed','Cancelled by customer')"]
+    where = ["o.reg_customer_email = %s", "o.order_status IN ('Active','Completed','Cancelled by customer', 'Cancelled by system')"]
 
     params = [email]
 
@@ -906,7 +880,6 @@ def purchase_history():
     where_sql = "WHERE " + " AND ".join(where)
 
     with db_cursor() as cur:
-        # One query: orders + seats_count + total price (from Flight_Class_Pricing)
         cur.execute(f"""
             SELECT
               o.order_id,
@@ -948,7 +921,7 @@ def logout():
     session.pop("user_email", None)
     session.pop("just_logged_in_name", None)
 
-    # ✅ if the user clicked "Admin" and we forced logout first
+    # If the user clicked "Admin" and we forced logout first
     next_url = session.pop("next_after_logout", None)
     if next_url:
         return redirect(next_url)
@@ -957,7 +930,6 @@ def logout():
     return redirect(url_for("home"))
 
 def is_safe_url(target: str) -> bool:
-    """Prevent open-redirects (only allow redirects inside your site)."""
     if not target:
         return False
     ref_url = urlparse(request.host_url)
@@ -975,7 +947,7 @@ def generate_order_id(cur, max_tries=20):
 
 def cleanup_expired_pending_orders():
     with db_cursor() as cur:
-        # 1) find orders that should be removed (never paid)
+        # Find orders that should be removed (never paid)
         cur.execute("""
             SELECT order_id
             FROM Orders
@@ -986,7 +958,7 @@ def cleanup_expired_pending_orders():
         """)
         old_orders = [r["order_id"] for r in cur.fetchall()]
 
-        # 2) release seats + delete the orders
+        # Release seats + delete the orders
         for oid in old_orders:
             cur.execute("UPDATE Seat SET order_id = NULL WHERE order_id = %s", (oid,))
             cur.execute("DELETE FROM Orders WHERE order_id = %s", (oid,))
@@ -1021,13 +993,13 @@ def admin_login():
 
 @app.route("/go-admin")
 def go_admin():
-    # Customer logged in -> block and remember where to go after logout
+    # If customer is logged in - block and remember to redirect to admin after logout
     if session.get("user_email"):
         session["next_after_logout"] = url_for("admin_login")
         flash("Please logout of the customer account", "error")
         return redirect(request.referrer or url_for("home"))
 
-    # Not logged in as customer -> allow admin login
+    # Not logged in as customer - allow admin login
     return redirect(url_for("admin_login"))
 
 @app.route("/admin/flights", methods=["GET"])
@@ -1044,6 +1016,7 @@ def admin_flights():
     where = []
     params = []
 
+    # Filter
     if flight_id:
         where.append("f.flight_id = %s")
         params.append(flight_id)
@@ -1075,7 +1048,6 @@ def admin_flights():
 
     now = datetime.now()
     for f in flights:
-        # takeoff_time from MySQL might be a timedelta or time; normalize_time handles it in your project
         takeoff_t = normalize_time(f["takeoff_time"])
         takeoff_dt = datetime.combine(f["takeoff_date"], takeoff_t)
 
@@ -1108,7 +1080,7 @@ def admin_add_plane():
             flash("Please fill in all required fields.", "error")
             return render_template("admin_add_plane.html")
 
-        # ✅ Business required ONLY if Large
+        # Business class is required only if it's a large plane
         if plane_size == "Large" and (not bus_rows or not bus_cols):
             flash("Large planes must include Business rows and columns.", "error")
             return render_template("admin_add_plane.html")
@@ -1132,19 +1104,19 @@ def admin_add_plane():
 
         try:
             with db_cursor() as cur:
-                # 1) Insert Plane
+                # Insert Plane
                 cur.execute("""
                     INSERT INTO Plane (plane_id, plane_size, plane_manufacturer, purchase_date)
                     VALUES (%s, %s, %s, %s)
                 """, (plane_id, plane_size, plane_manufacturer, purchase_date))
 
-                # 2) Insert Economy cabin layout
+                # Insert Economy cabin layout
                 cur.execute("""
                     INSERT INTO Cabin_class (plane_id, class_type, rows_num, columns_num)
                     VALUES (%s, 'Economy', %s, %s)
                 """, (plane_id, econ_rows, econ_cols))
 
-                # 3) Insert Business cabin layout ONLY for Large
+                # Insert Business cabin layout
                 if plane_size == "Large":
                     cur.execute("""
                         INSERT INTO Cabin_class (plane_id, class_type, rows_num, columns_num)
@@ -1186,12 +1158,8 @@ def admin_add_route():
 
     return render_template("admin_add_route.html")
 
+# Checks if a plane is reserved for a different flight at this time
 def has_plane_conflict(cur, plane_id, new_start_dt, new_end_dt):
-    """
-    Returns a dict with the conflicting flight (flight_id + window) if conflict exists,
-    otherwise returns None.
-    Only considers Scheduled/Full flights.
-    """
     plane_id = (plane_id or "").strip().upper()
 
     cur.execute("""
@@ -1213,14 +1181,10 @@ def has_plane_conflict(cur, plane_id, new_start_dt, new_end_dt):
         LIMIT 1
     """, (plane_id, new_start_dt, new_end_dt))
 
-    return cur.fetchone()  # None if no conflict
+    return cur.fetchone()
 
-
+# Checks if an employee is reserved for a different flight at this time
 def has_employee_conflict(cur, link_table, employee_id, new_start_dt, new_end_dt):
-    """
-    link_table: 'Pilots_in_flights' or 'Flight_attendants_in_flights'
-    Returns True if employee has an overlapping flight window.
-    """
     cur.execute(f"""
         SELECT 1
         FROM {link_table} lf
@@ -1242,15 +1206,10 @@ def admin_add_flight():
     if not session.get("admin_employee_id"):
         return redirect(url_for("admin_login"))
 
-    # -------------------------
-    # GET dropdown data + maps
-    # -------------------------
     with db_cursor() as cur:
-        # Planes dropdown
         cur.execute("SELECT plane_id FROM Plane ORDER BY plane_id")
         planes = [r["plane_id"] for r in cur.fetchall()]
 
-        # Routes dropdown (+ durations)
         cur.execute("""
             SELECT route_id, origin_airport, destination_airport, flight_duration
             FROM Flight_route
@@ -1258,7 +1217,6 @@ def admin_add_flight():
         """)
         routes = cur.fetchall()
 
-        # Logged-in admin details
         admin_id = session.get("admin_employee_id")
         cur.execute("""
             SELECT employee_id, employee_first_name, employee_last_name
@@ -1272,14 +1230,12 @@ def admin_add_flight():
             session.pop("admin_employee_id", None)
             return redirect(url_for("admin_login"))
 
-        # Cabin layouts for layout_map
         cur.execute("""
             SELECT plane_id, class_type, rows_num, columns_num
             FROM Cabin_class
         """)
         cc = cur.fetchall()
 
-        # ALL crew
         cur.execute("""
             SELECT employee_id, employee_first_name, employee_last_name, long_flight_training
             FROM Pilot
@@ -1294,7 +1250,6 @@ def admin_add_flight():
         """)
         all_attendants = cur.fetchall()
 
-    # Build layout_map: {plane_id: {class_type: {rows, cols}}}
     layout_map = {}
     for x in cc:
         pid = x["plane_id"]
@@ -1304,15 +1259,12 @@ def admin_add_flight():
             "cols": int(x["columns_num"])
         }
 
-    # Build route_map: {route_id(str): duration(int minutes)}
     route_map = {str(r["route_id"]): int(r["flight_duration"]) for r in routes}
 
-    # -------------------------
-    # Helper: filter crew by long-flight rule
-    # -------------------------
+    # Filter crew by long-flight training
     def filter_crew_for_route(route_id_str: str):
         minutes = int(route_map.get(str(route_id_str), 0) or 0)
-        is_long = minutes >= 360  # ✅ 6 hours or more
+        is_long = minutes >= 360
 
         if is_long:
             pilots_filtered = [p for p in all_pilots if int(p["long_flight_training"]) == 1]
@@ -1323,9 +1275,6 @@ def admin_add_flight():
 
         return pilots_filtered, attendants_filtered, is_long, minutes
 
-    # -------------------------
-    # GET: decide selected route & filter lists shown
-    # -------------------------
     if routes:
         selected_route_id = request.args.get("route_id") or str(routes[0]["route_id"])
     else:
@@ -1333,9 +1282,6 @@ def admin_add_flight():
 
     pilots, attendants, is_long_flight, duration_minutes = filter_crew_for_route(selected_route_id)
 
-    # -------------------------
-    # POST: create flight
-    # -------------------------
     if request.method == "POST":
         flight_id = request.form.get("flight_id", "").strip().upper()
         route_id = request.form.get("route_id", "").strip()          # confirm it's string
@@ -1347,11 +1293,9 @@ def admin_add_flight():
         econ_price = request.form.get("econ_price", "").strip()
         bus_price  = request.form.get("bus_price", "").strip()
 
-        # ✅ checkbox lists (NO CTRL needed)
         pilot_ids = request.form.getlist("pilot_ids")
         attendant_ids = request.form.getlist("attendant_ids")
 
-        # Re-filter based on the route chosen in POST
         pilots, attendants, is_long_flight, duration_minutes = filter_crew_for_route(route_id)
         selected_route_id = str(route_id)
 
@@ -1370,7 +1314,6 @@ def admin_add_flight():
                 is_long_flight=is_long_flight
             )
 
-        # Basic validation
         if not all([flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time]):
             return render_with_error("Please fill in the required flight fields.")
 
@@ -1383,15 +1326,13 @@ def admin_add_flight():
                         f"Flight ID '{flight_id}' already exists. Please choose a different ID."
                     )
 
-                # 0.5) Compute new flight window
                 new_start_dt = datetime.strptime(f"{takeoff_date} {takeoff_time}", "%Y-%m-%d %H:%M")
                 new_end_dt = new_start_dt + timedelta(minutes=int(duration_minutes))
 
-                # (optional debug) confirm db
                 cur.execute("SELECT DATABASE() AS db")
                 print("DB in use:", (cur.fetchone() or {}).get("db"))
 
-                # 1) Prevent plane overlap
+                # Prevent plane overlap
                 conflict = has_plane_conflict(cur, plane_id, new_start_dt, new_end_dt)
                 if conflict:
                     return render_with_error(
@@ -1399,7 +1340,7 @@ def admin_add_flight():
                         f"({conflict['start_dt']} → {conflict['end_dt']}, status={conflict['flight_status']})."
                     )
 
-                # 2) Prevent crew overlap
+                # Prevent crew overlap
                 for pid in pilot_ids:
                     if has_employee_conflict(cur, "Pilots_in_flights", pid, new_start_dt, new_end_dt):
                         return render_with_error(f"Pilot {pid} already has an overlapping flight.")
@@ -1408,7 +1349,7 @@ def admin_add_flight():
                     if has_employee_conflict(cur, "Flight_attendants_in_flights", aid, new_start_dt, new_end_dt):
                         return render_with_error(f"Flight attendant {aid} already has an overlapping flight.")
 
-                # 3) Cabin layout (Economy required, Business optional)
+                # Cabin layout (Economy required, Business optional)
                 cur.execute("""
                     SELECT class_type, rows_num, columns_num
                     FROM Cabin_class
@@ -1428,13 +1369,13 @@ def admin_add_flight():
                 if has_business:
                     bus_rows, bus_cols = layout["Business"]
 
-                # 4) Prices validation (Economy required, Business only if exists)
+                # Prices validation (Economy required, Business only if exists)
                 if not econ_price:
                     return render_with_error("Please enter Economy price.")
                 if has_business and not bus_price:
                     return render_with_error("Please enter Business price.")
 
-                # 5) Insert Flight
+                # Insert Flight to DB
                 cur.execute("""
                     INSERT INTO Flight
                       (flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time, flight_status)
@@ -1443,7 +1384,7 @@ def admin_add_flight():
 
                 create_seats_for_flight(cur, flight_id, plane_id)
 
-                # 6) Insert pricing
+                # Insert pricing to DB
                 cur.execute("""
                     INSERT INTO Flight_Class_Pricing (flight_id, plane_id, class_type, price)
                     VALUES (%s, %s, 'Economy', %s)
@@ -1455,7 +1396,6 @@ def admin_add_flight():
                         VALUES (%s, %s, 'Business', %s)
                     """, (flight_id, plane_id, float(bus_price)))
 
-                # 8) Crew links (replace existing if retry)
                 cur.execute("DELETE FROM Pilots_in_flights WHERE flight_id = %s", (flight_id,))
                 cur.execute("DELETE FROM Flight_attendants_in_flights WHERE flight_id = %s", (flight_id,))
 
@@ -1471,12 +1411,11 @@ def admin_add_flight():
                         VALUES (%s, %s)
                     """, (flight_id, aid))
 
-            # ✅ ONLY if everything succeeded
             flash("Flight created successfully.", "success")
             return redirect(url_for("admin_flights"))
 
         except mysql.connector.Error as e:
-            # Cleanup partial inserts (important with autocommit)
+            # Cleanup partial inserts
             try:
                 with db_cursor() as cur2:
                     cur2.execute("DELETE FROM Seat WHERE flight_id = %s", (flight_id,))
@@ -1490,7 +1429,6 @@ def admin_add_flight():
             return render_with_error(f"Database error: {e.msg}")
 
         except Exception:
-            # Catch-all
             try:
                 with db_cursor() as cur2:
                     cur2.execute("DELETE FROM Seat WHERE flight_id = %s", (flight_id,))
@@ -1503,9 +1441,6 @@ def admin_add_flight():
 
             return render_with_error("Something went wrong while creating the flight.")
 
-    # -------------------------
-    # GET: render page
-    # -------------------------
     return render_template(
         "admin_add_flight.html",
         planes=planes,
@@ -1530,7 +1465,6 @@ def admin_cancel_flight(flight_id):
     admin_id = session.get("admin_employee_id")
 
     with db_cursor() as cur:
-        # 1) Fetch flight details
         cur.execute("""
             SELECT flight_status, takeoff_date, takeoff_time, manager_id
             FROM Flight
@@ -1544,29 +1478,26 @@ def admin_cancel_flight(flight_id):
 
         # Only the assigned manager can cancel
         if str(flight["manager_id"]) != str(admin_id):
-            flash("You can cancel only flights assigned to you.", "error")
+            flash("You can cancel only flights assigned to you", "error")
             return redirect(url_for("admin_flights"))
 
         if flight["flight_status"] not in ("Scheduled", "Full"):
             flash("Only Scheduled/Full flights can be cancelled.", "error")
             return redirect(url_for("admin_flights"))
 
-        # 2) 72h rule
         takeoff_t = normalize_time(flight["takeoff_time"])
         takeoff_dt = datetime.combine(flight["takeoff_date"], takeoff_t)
         if takeoff_dt - datetime.now() < timedelta(hours=72):
             flash("Too late to cancel: you can cancel only 72+ hours before takeoff.", "error")
             return redirect(url_for("admin_flights"))
 
-        # 3) Mark flight cancelled
         cur.execute("""
             UPDATE Flight
             SET flight_status = 'Cancelled'
             WHERE flight_id = %s
         """, (flight_id,))
 
-        # 4) Refund ALL paid orders (Active) in one shot
-        # Compute totals per order_id from Seat + Flight_Class_Pricing
+        # Refund active paid orders
         cur.execute("""
             SELECT
               o.order_id,
@@ -1595,7 +1526,7 @@ def admin_cancel_flight(flight_id):
               AND order_status = 'Active'
         """, (flight_id,))
 
-        # 5) Cancel pending reservations too (no "refund", but release seats)
+        # Cancel pending reservations
         cur.execute("""
             UPDATE Orders
             SET order_status = 'Cancelled by system'
@@ -1603,8 +1534,7 @@ def admin_cancel_flight(flight_id):
               AND order_status = 'Pending'
         """, (flight_id,))
 
-        # 6) Release seats for ANY order on this flight (paid/pending/whatever)
-        # This prevents "stuck" seats.
+        # Release seats
         cur.execute("""
             UPDATE Seat s
             JOIN Orders o ON o.order_id = s.order_id
@@ -1637,7 +1567,7 @@ def admin_dashboard():
         cur.execute("SELECT COUNT(*) AS n FROM Flight")
         flights_count = cur.fetchone()["n"]
 
-        # --- cancellation rate per month (from your Query 4) ---
+        # Cancellation rate per month
         cur.execute("""
             SELECT
               DATE_FORMAT(date_of_purchase, '%Y-%m') AS purchase_month,
@@ -1651,7 +1581,7 @@ def admin_dashboard():
         """)
         rows = cur.fetchall()
 
-        # --- employee hours (Query 3) ---
+        # Flight hours per employee hours
         cur.execute("""
             WITH employee_flights AS (
               SELECT
@@ -1690,7 +1620,7 @@ def admin_dashboard():
         """)
         emp_rows = cur.fetchall()
 
-        # --- flights by takeoff hour ---
+        # Flights by takeoff hour
         cur.execute("""
             SELECT
               HOUR(f.takeoff_time) AS takeoff_hour,
@@ -1704,7 +1634,7 @@ def admin_dashboard():
         """)
         hour_rows = cur.fetchall()
 
-        # --- flights completed per month ---
+        # Flights completed per month
         cur.execute("""
             SELECT
               DATE_FORMAT(f.takeoff_date, '%Y-%m') AS month,
@@ -1716,7 +1646,7 @@ def admin_dashboard():
         """)
         completed_rows = cur.fetchall()
 
-        # --- top 5 routes by completed flights ---
+        # Top 5 routes by completed flights
         cur.execute("""
             SELECT
               CONCAT(fr.origin_airport, ' → ', fr.destination_airport) AS route,
@@ -1734,7 +1664,7 @@ def admin_dashboard():
     months = [r["purchase_month"] for r in rows]
     rates = [float(r["customer_cancellation_rate"] or 0) for r in rows]
 
-    # save plot into static/
+    # Graphs
     static_dir = os.path.join(app.root_path, "static")
     os.makedirs(static_dir, exist_ok=True)
     plot_path = os.path.join(static_dir, "cancellation_rate_by_month.png")
@@ -1751,7 +1681,6 @@ def admin_dashboard():
 
     df = pd.DataFrame(emp_rows)
 
-    # If there are employees with no completed flights, the query can return NULLs -> make them 0
     df["long_flight_hours"] = df["long_flight_hours"].fillna(0).astype(float)
     df["short_flight_hours"] = df["short_flight_hours"].fillna(0).astype(float)
 
@@ -1787,20 +1716,18 @@ def admin_dashboard():
 
     df_hour = pd.DataFrame(hour_rows)
 
-    # make sure types + order are correct (prevents the "categorical units" warning too)
     df_hour["takeoff_hour"] = df_hour["takeoff_hour"].astype(int)
     df_hour["flights_count"] = df_hour["flights_count"].astype(int)
     df_hour = df_hour.sort_values("takeoff_hour")
 
     plt.figure(figsize=(10, 5))
 
-    # BAR chart (like your 2nd picture)
     plt.bar(df_hour["takeoff_hour"], df_hour["flights_count"], width=0.6)
 
     plt.title("Number of Flights by Takeoff Hour")
     plt.xlabel("Takeoff Hour")
     plt.ylabel("Number of Flights")
-    plt.xticks(df_hour["takeoff_hour"])  # show only hours that exist (like screenshot)
+    plt.xticks(df_hour["takeoff_hour"])
 
     plt.tight_layout()
 
@@ -1814,7 +1741,6 @@ def admin_dashboard():
 
     df_completed["flights_completed"] = df_completed["flights_completed"].astype(int)
 
-    # make sure sorted
     df_completed = df_completed.sort_values("month")
 
     plt.figure(figsize=(10, 5))
@@ -1840,7 +1766,6 @@ def admin_dashboard():
 
     df_top5["flights_completed"] = df_top5["flights_completed"].astype(int)
 
-    # nicer: sort ascending so the biggest is on top
     df_top5 = df_top5.sort_values("flights_completed", ascending=True)
 
     plt.figure(figsize=(10, 4))
@@ -1906,7 +1831,6 @@ def admin_add_employee():
         employment_date_raw = request.form.get("employment_date", "").strip()
         job_title = request.form.get("job_title", "").strip()
 
-        # ✅ Checkbox: if checked it exists, if not checked it's missing
         long_flight_training = 1 if request.form.get("long_flight_training") else 0
 
         form.update({
@@ -1958,7 +1882,6 @@ def admin_add_employee():
 
         try:
             with db_cursor() as cur:
-                # prevent duplicates in all employee tables
                 cur.execute("SELECT 1 FROM Manager WHERE employee_id = %s", (employee_id,))
                 if cur.fetchone():
                     flash("That employee ID already exists (Manager).", "error")
