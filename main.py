@@ -1762,22 +1762,22 @@ def admin_dashboard():
 
     df_hour = pd.DataFrame(hour_rows)
 
-    plt.figure(figsize=(8, 5))
-    plt.plot(
-        df_hour["takeoff_hour"],
-        df_hour["flights_count"],
-        marker="o",
-        linewidth=2
-    )
+    # make sure types + order are correct (prevents the "categorical units" warning too)
+    df_hour["takeoff_hour"] = df_hour["takeoff_hour"].astype(int)
+    df_hour["flights_count"] = df_hour["flights_count"].astype(int)
+    df_hour = df_hour.sort_values("takeoff_hour")
+
+    plt.figure(figsize=(10, 5))
+
+    # BAR chart (like your 2nd picture)
+    plt.bar(df_hour["takeoff_hour"], df_hour["flights_count"], width=0.6)
 
     plt.title("Number of Flights by Takeoff Hour")
     plt.xlabel("Takeoff Hour")
     plt.ylabel("Number of Flights")
-    plt.xticks(df_hour["takeoff_hour"])
-    plt.tight_layout()
+    plt.xticks(df_hour["takeoff_hour"])  # show only hours that exist (like screenshot)
 
-    static_dir = os.path.join(app.root_path, "static")
-    os.makedirs(static_dir, exist_ok=True)
+    plt.tight_layout()
 
     hour_plot_filename = f"flights_by_takeoff_hour_{int(datetime.now().timestamp())}.png"
     hour_plot_path = os.path.join(static_dir, hour_plot_filename)
