@@ -1422,7 +1422,7 @@ CREATE TABLE Pilots_in_flights (
   FOREIGN KEY (employee_id) REFERENCES Pilot(employee_id)
 );
 
-INSERT INTO pilots_in_flights (flight_id, employee_id)
+INSERT INTO Pilots_in_flights (flight_id, employee_id)
 VALUES
 /* ===================== P0003 (Small) ===================== */
 ('F1001', '172604895'), ('F1001', '893417256'),
@@ -1458,7 +1458,7 @@ VALUES
 ('F1026', '704963581'), ('F1026', '214963587'), ('F1026', '287451936'),
 ('F1027', '704963581'), ('F1027', '214963587'), ('F1027', '287451936');
 
-INSERT INTO pilots_in_flights (flight_id, employee_id)
+INSERT INTO Pilots_in_flights (flight_id, employee_id)
 VALUES
 /* ===================== P0003 (Small) ===================== */
 ('F1028', '172604895'), ('F1028', '893417256'),
