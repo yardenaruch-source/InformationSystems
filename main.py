@@ -1779,9 +1779,6 @@ def admin_dashboard():
     plt.legend()
     plt.tight_layout()
 
-    static_dir = os.path.join(app.root_path, "static")
-    os.makedirs(static_dir, exist_ok=True)
-
     emp_plot_filename = f"employee_hours_{int(datetime.now().timestamp())}.png"
     emp_plot_path = os.path.join(static_dir, emp_plot_filename)
 
@@ -1815,6 +1812,8 @@ def admin_dashboard():
 
     df_completed = pd.DataFrame(completed_rows)
 
+    df_completed["flights_completed"] = df_completed["flights_completed"].astype(int)
+
     # make sure sorted
     df_completed = df_completed.sort_values("month")
 
@@ -1838,6 +1837,8 @@ def admin_dashboard():
     plt.close()
 
     df_top5 = pd.DataFrame(top5_rows)
+
+    df_top5["flights_completed"] = df_top5["flights_completed"].astype(int)
 
     # nicer: sort ascending so the biggest is on top
     df_top5 = df_top5.sort_values("flights_completed", ascending=True)

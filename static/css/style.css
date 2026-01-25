@@ -932,3 +932,145 @@ main.container{
   display: block;
   border-radius: 12px;
 }
+
+/* =========================
+   ADMIN DASHBOARD LAYOUT
+   ========================= */
+
+.dash-wrap{
+  width: min(1200px, 95vw);
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+.dash-title{
+  text-align: center;
+  margin: 10px 0 14px;
+  font-size: 44px;
+  font-weight: 800;
+  color: #0b2a3a;
+  letter-spacing: 0.3px;
+}
+
+/* You already have admin-stats/admin-stat styles in your CSS :contentReference[oaicite:1]{index=1} */
+
+.dash-grid{
+  display: grid;
+  gap: 26px;
+  align-items: start;
+  margin-top: 20px;
+}
+
+/* Two-column grid (like your screenshots) */
+.dash-grid-2{
+  grid-template-columns: 1.15fr 1fr;
+}
+
+/* second big section: keep similar proportions */
+.dash-grid-2b{
+  margin-top: 26px;
+}
+
+.dash-stack{
+  display: grid;
+  gap: 26px;
+}
+
+/* Card that holds each graph */
+.dash-card{
+  background: rgba(255,255,255,0.92);
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.18);
+  overflow: hidden; /* IMPORTANT for rounded corners on image */
+  position: relative;
+}
+
+/* Graph image */
+.dash-img{
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 14px;
+  cursor: zoom-in;
+}
+
+/* =========================
+   HOVER FULLSCREEN (CSS only)
+   ========================= */
+
+.dash-card:hover::after{
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.60);
+  z-index: 1000;
+}
+
+.dash-card:hover .dash-img{
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 92vw;
+  max-height: 92vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  z-index: 1001;
+
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 22px 60px rgba(0,0,0,0.40);
+  cursor: zoom-out;
+}
+
+/* =========================
+   QUOTE CARD
+   ========================= */
+
+.quote-card{
+  background: rgba(255,255,255,0.92);
+  border-radius: 22px;
+  padding: 26px 24px;
+  box-shadow: 0 14px 30px rgba(0,0,0,0.18);
+  position: relative;
+  overflow: hidden;
+  min-height: 150px;
+}
+
+.quote-text{
+  text-align: center;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #0b7e86;
+  font-size: 26px;
+  line-height: 1.25;
+}
+
+.quote-mark{
+  position: absolute;
+  font-size: 80px;
+  font-weight: 900;
+  color: rgba(11,126,134,0.85);
+  line-height: 1;
+}
+
+.quote-mark-top{
+  top: 6px;
+  right: 16px;
+}
+
+.quote-mark-bottom{
+  bottom: -10px;
+  left: 16px;
+}
+
+/* =========================
+   RESPONSIVE
+   ========================= */
+@media (max-width: 980px){
+  .dash-grid-2{
+    grid-template-columns: 1fr;
+  }
+}
