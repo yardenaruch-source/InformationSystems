@@ -1715,6 +1715,21 @@ def admin_dashboard():
         """)
         completed_rows = cur.fetchall()
 
+        # --- top 5 routes by completed flights ---
+        cur.execute("""
+            SELECT
+              CONCAT(fr.origin_airport, ' → ', fr.destination_airport) AS route,
+              COUNT(*) AS flights_completed
+            FROM Flight f
+            JOIN Flight_route fr
+              ON fr.route_id = f.route_id
+            WHERE f.flight_status = 'Completed'
+            GROUP BY route
+            ORDER BY flights_completed DESC
+            LIMIT 5;
+        """)
+        top5_rows = cur.fetchall()
+
     months = [r["purchase_month"] for r in rows]
     rates = [float(r["customer_cancellation_rate"] or 0) for r in rows]
 
@@ -1821,6 +1836,29 @@ def admin_dashboard():
     plt.savefig(completed_plot_path, dpi=200, bbox_inches="tight")
     plt.close()
 
+    df_top5 = pd.DataFrame(top5_rows)
+
+    # nicer: sort ascending so the biggest is on top
+    df_top5 = df_top5.sort_values("flights_completed", ascending=True)
+
+    plt.figure(figsize=(10, 4))
+    plt.barh(
+        df_top5["route"],
+        df_top5["flights_completed"],
+        height=0.5
+    )
+
+    plt.title("Top 5 Routes by Completed Flights")
+    plt.xlabel("Number of Completed Flights")
+    plt.ylabel("Route")
+    plt.tight_layout()
+
+    top5_plot_filename = f"top5_routes_completed_{int(datetime.now().timestamp())}.png"
+    top5_plot_path = os.path.join(static_dir, top5_plot_filename)
+
+    plt.savefig(top5_plot_path, dpi=200, bbox_inches="tight")
+    plt.close()
+
     return render_template(
         "admin_dashboard.html",
         planes_count=planes_count,
@@ -1829,7 +1867,8 @@ def admin_dashboard():
         cancel_plot="cancellation_rate_by_month.png",
         employee_hours_plot = emp_plot_filename,
         flights_by_hour_plot=hour_plot_filename,
-        flights_completed_plot=completed_plot_filename
+        flights_completed_plot=completed_plot_filename,
+        top5_routes_plot=top5_plot_filename
     )
 
 @app.route("/admin/add/employees", methods=["GET", "POST"])
