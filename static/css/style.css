@@ -1221,7 +1221,7 @@ main.container{
 
 /* make bottom section proportions slightly different if you want */
 .dash-grid-bottom{
-  grid-template-columns: 1.1fr 1fr;
+  grid-template-columns: 1.35fr 0.8fr;
 }
 
 /* responsive: collapse to 1 column and remove “stack” feeling */
