@@ -1164,11 +1164,6 @@ main.container{
   color: #0b2a3a;
 }
 
-/* spacing between sections */
-.dash-section{
-  margin-top: 26px;
-}
-
 /* 2-column layout */
 .dash-grid-2col{
   display: grid;

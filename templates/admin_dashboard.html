@@ -38,14 +38,15 @@
     </div>
 
     <!-- RIGHT STACK -->
-      <div class="dash-card">
-        <h3 class="dash-card-title">Number of Flights by Takeoff Hour</h3>
-        <img
-          class="dash-img"
-          src="{{ url_for('static', filename=flights_by_hour_plot) }}"
-          alt="Flights by takeoff hour"
-        >
-      </div>
+        <!-- RIGHT NORMAL -->
+    <div class="dash-card">
+      <h3 class="dash-card-title">Top 5 Routes by Completed Flights</h3>
+      <img
+        class="dash-img"
+        src="{{ url_for('static', filename=top5_routes_plot) }}"
+        alt="Top 5 routes"
+      >
+    </div>
 
       <div class="dash-card">
         <h3 class="dash-card-title">Flights Completed per Month</h3>
@@ -75,15 +76,15 @@
       >
     </div>
 
-    <!-- RIGHT NORMAL -->
-    <div class="dash-card">
-      <h3 class="dash-card-title">Top 5 Routes by Completed Flights</h3>
-      <img
-        class="dash-img"
-        src="{{ url_for('static', filename=top5_routes_plot) }}"
-        alt="Top 5 routes"
-      >
-    </div>
+      <div class="dash-card">
+        <h3 class="dash-card-title">Number of Flights by Takeoff Hour</h3>
+        <img
+          class="dash-img"
+          src="{{ url_for('static', filename=flights_by_hour_plot) }}"
+          alt="Flights by takeoff hour"
+        >
+      </div>
+
 
   </div>
 
