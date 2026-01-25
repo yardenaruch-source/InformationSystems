@@ -9,6 +9,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use("Agg")  # important on servers
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 
 app = Flask(__name__)
 app.secret_key = 'the_winning_triplet'
@@ -1851,6 +1852,10 @@ def admin_dashboard():
     plt.title("Top 5 Routes by Completed Flights")
     plt.xlabel("Number of Completed Flights")
     plt.ylabel("Route")
+
+    ax = plt.gca()
+    ax.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+
     plt.tight_layout()
 
     top5_plot_filename = f"top5_routes_completed_{int(datetime.now().timestamp())}.png"
