@@ -1682,6 +1682,7 @@ def admin_dashboard():
     plt.grid(True)
     plt.tight_layout()
     plt.savefig(plot_path, dpi=200, bbox_inches="tight")
+    print("Saved cancel plot to:", plot_path)
     plt.close()
 
     df = pd.DataFrame(emp_rows)
