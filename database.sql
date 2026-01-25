@@ -1751,7 +1751,7 @@ SELECT * FROM Flight;
 SELECT * FROM Orders;
 SELECT * FROM Cabin_class;
 SELECT * FROM Seat;
-SELECT * FROM Flight_class_pricing;
+SELECT * FROM Flight_Class_Pricing;
 SELECT * FROM Pilots_in_flights;
 SELECT * FROM Flight_attendants_in_flights;
 
