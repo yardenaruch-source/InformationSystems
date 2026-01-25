@@ -1167,7 +1167,7 @@ main.container{
 /* 2-column layout */
 .dash-grid-2col{
   display: grid;
-  grid-template-columns: 1.25fr 0.9fr; /* left bigger like screenshot */
+  grid-template-columns: 1fr 1fr; /* left bigger like screenshot */
   gap: 26px;
   align-items: start;
 }
