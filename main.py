@@ -1326,6 +1326,23 @@ def admin_add_flight():
                 is_long_flight=is_long_flight
             )
 
+        pilots_count = len(pilot_ids)
+        attendants_count = len(attendant_ids)
+
+        if is_long_flight:
+            required_pilots = 3
+            required_attendants = 6
+        else:
+            required_pilots = 2
+            required_attendants = 3
+
+        if pilots_count != required_pilots or attendants_count != required_attendants:
+            return render_with_error(
+                f"{'Long' if is_long_flight else 'Short'} flights require "
+                f"{required_pilots} pilot(s) and {required_attendants} flight attendant(s). "
+                f"You selected {pilots_count} pilot(s) and {attendants_count} attendant(s)."
+            )
+
         if not all([flight_id, route_id, plane_id, manager_id, takeoff_date, takeoff_time]):
             return render_with_error("Please fill in the required flight fields.")
 
